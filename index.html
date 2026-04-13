@@ -6011,12 +6011,13 @@ async function exportPDF() {
     res.years.forEach(yr=>{const v=yr.pillars[k]||0;t+=v;row.push(pdfM(v));});
     row.push(pdfM(t)); return row;
   });
-  const pdCols={0:{cellWidth:120,font:HEAD_FONT,fontSize:7,fontStyle:"bold"}};
-  for(let i=1;i<=res.years.length+1;i++) pdCols[i]={halign:"right",fontSize:7};
-  pdCols[res.years.length+1].fontStyle="bold";
+  const yrCount = res.years.length; // Y0..Y5 = 6
+  const pdCols={0:{font:HEAD_FONT,fontSize:6.5,fontStyle:"bold"}};
+  for(let i=1;i<=yrCount+1;i++) pdCols[i]={halign:"right",fontSize:6.5};
+  pdCols[yrCount+1].fontStyle="bold";
   doc.autoTable({ startY:y, head:pdHead, body:pdBody,
-    headStyles:{...TBL_H,fontSize:7}, bodyStyles:{...TBL_B,fontSize:7,cellPadding:2},
-    styles:{...TBL_S,cellPadding:2}, margin:{left:M,right:M},
+    headStyles:{...TBL_H,fontSize:6.5}, bodyStyles:{...TBL_B,fontSize:6.5,cellPadding:2},
+    styles:{...TBL_S,cellPadding:2}, tableWidth:CW, margin:{left:M,right:M},
     alternateRowStyles:TBL_ALT, columnStyles:pdCols });
   ftr();
 
@@ -6025,22 +6026,106 @@ async function exportPDF() {
   // ================================================================
   y = newPage("Financial Projection Charts");
 
-  // J-curve — give it proper aspect ratio
-  const jc = chartImg("chart-jcurve", M, y, CW, 260);
-  if (jc.ok) { y += jc.h + 12; } else {
-    doc.setFont(BODY_FONT,"italic"); doc.setFontSize(8); doc.setTextColor(...MID);
-    doc.text("J-curve chart not available. View the dashboard in a browser to render charts before exporting.", M, y+10);
-    y += 20;
+  // --- Native J-curve (cumulative cash-flow) chart ---
+  {
+    const chartH = 220, chartW = CW - 40, chartX = M + 30, chartY = y;
+    const vals = res.years.map(yr => yr.cumulative);
+    const minV = Math.min(...vals, 0), maxV = Math.max(...vals, 0);
+    const range = (maxV - minV) || 1;
+    const padTop = range * 0.1, padBot = range * 0.1;
+    const totalRange = range + padTop + padBot;
+    const adjMin = minV - padBot;
+
+    // Y-axis gridlines + labels
+    const gridSteps = 5;
+    doc.setDrawColor(220,220,220); doc.setFont(HEAD_FONT,"normal"); doc.setFontSize(6); doc.setTextColor(...LIGHT);
+    for (let i = 0; i <= gridSteps; i++) {
+      const gy = chartY + chartH - (i / gridSteps) * chartH;
+      const gv = adjMin + (i / gridSteps) * totalRange;
+      doc.setDrawColor(230,230,230); doc.line(chartX, gy, chartX + chartW, gy);
+      doc.text(pdfM(gv), chartX - 4, gy + 2, { align: "right" });
+    }
+
+    // Zero line
+    const zeroY = chartY + chartH - ((0 - adjMin) / totalRange) * chartH;
+    doc.setDrawColor(160,160,160); doc.setLineWidth(0.5); doc.line(chartX, zeroY, chartX + chartW, zeroY); doc.setLineWidth(0.2);
+
+    // Bars
+    const barW = chartW / vals.length * 0.6;
+    const barGap = chartW / vals.length;
+    vals.forEach((v, i) => {
+      const bx = chartX + i * barGap + (barGap - barW) / 2;
+      const valH = (Math.abs(v) / totalRange) * chartH;
+      if (v >= 0) {
+        doc.setFillColor(55, 130, 85); // green
+        doc.rect(bx, zeroY - valH, barW, valH, "F");
+      } else {
+        doc.setFillColor(180, 60, 60); // red
+        doc.rect(bx, zeroY, barW, valH, "F");
+      }
+      // X label
+      doc.setFont(HEAD_FONT,"normal"); doc.setFontSize(7); doc.setTextColor(...DARK);
+      doc.text("Y" + i, bx + barW / 2, chartY + chartH + 10, { align: "center" });
+      // Value on bar
+      doc.setFont(HEAD_FONT,"bold"); doc.setFontSize(6); doc.setTextColor(...DARK);
+      const vlbl = pdfM(v);
+      if (v >= 0) { doc.text(vlbl, bx + barW / 2, zeroY - valH - 3, { align: "center" }); }
+      else { doc.text(vlbl, bx + barW / 2, zeroY + valH + 8, { align: "center" }); }
+    });
+
+    // Connecting line
+    doc.setDrawColor(40, 70, 120); doc.setLineWidth(1.2);
+    for (let i = 0; i < vals.length - 1; i++) {
+      const x1 = chartX + i * barGap + barGap / 2;
+      const x2 = chartX + (i + 1) * barGap + barGap / 2;
+      const y1 = chartY + chartH - ((vals[i] - adjMin) / totalRange) * chartH;
+      const y2 = chartY + chartH - ((vals[i + 1] - adjMin) / totalRange) * chartH;
+      doc.line(x1, y1, x2, y2);
+    }
+    doc.setLineWidth(0.2);
+
+    // Title
+    doc.setFont(HEAD_FONT,"bold"); doc.setFontSize(8); doc.setTextColor(...ACCENT);
+    doc.text("Cumulative Cash Flow (J-Curve)", chartX, chartY - 6);
+
+    y = chartY + chartH + 22;
   }
 
-  // If not enough room for second chart, new page
+  // --- Native pillar waterfall chart ---
   if (y > H - 280) { ftr(); y = newPage("Charts (continued)"); }
+  {
+    const pillars = Object.entries(res.pillarTotals).filter(([,v]) => v !== 0).sort((a,b) => b[1] - a[1]);
+    if (pillars.length > 0) {
+      const chartH = 200, chartW = CW - 40, chartX = M + 30, chartY = y + 10;
+      const maxP = Math.max(...pillars.map(([,v]) => v));
 
-  const wf = chartImg("chart-waterfall", M, y, CW, 260);
-  if (wf.ok) { y += wf.h + 12; } else {
-    doc.setFont(BODY_FONT,"italic"); doc.setFontSize(8); doc.setTextColor(...MID);
-    doc.text("Waterfall chart not available.", M, y+10);
-    y += 20;
+      doc.setFont(HEAD_FONT,"bold"); doc.setFontSize(8); doc.setTextColor(...ACCENT);
+      doc.text("Value Pillar Breakdown (" + res.horizon + "-Year Total)", chartX, chartY - 6);
+
+      const barH = Math.min(18, (chartH - 10) / pillars.length);
+      const gap = Math.min(4, (chartH - pillars.length * barH) / Math.max(1, pillars.length - 1));
+
+      pillars.forEach(([k, v], i) => {
+        const by = chartY + i * (barH + gap);
+        const bw = (v / maxP) * (chartW - 120);
+        // Bar
+        const hue = i % 2 === 0 ? [40, 70, 120] : [55, 130, 85];
+        doc.setFillColor(...hue);
+        doc.rect(chartX, by, Math.max(2, bw), barH, "F");
+        // Label left
+        const plabel = (PILLAR_LABELS[k] || k);
+        const shortLabel = plabel.length > 28 ? plabel.slice(0, 26) + ".." : plabel;
+        doc.setFont(BODY_FONT,"normal"); doc.setFontSize(6.5); doc.setTextColor(...DARK);
+        // Value right of bar
+        doc.setFont(HEAD_FONT,"bold"); doc.setFontSize(7); doc.setTextColor(...DARK);
+        doc.text(pdfM(v), chartX + Math.max(2, bw) + 4, by + barH / 2 + 2);
+        // Pillar name above bar
+        doc.setFont(BODY_FONT,"normal"); doc.setFontSize(6); doc.setTextColor(...MID);
+        doc.text(shortLabel, chartX, by - 1);
+      });
+
+      y = chartY + pillars.length * (barH + gap) + 16;
+    }
   }
   ftr();
 
@@ -6053,11 +6138,46 @@ async function exportPDF() {
   y = body(sensNarrative, y, 8);
   y += 6;
 
-  const tn = chartImg("chart-tornado", M, y, CW, 240);
-  if (tn.ok) { y += tn.h + 12; } else {
-    doc.setFont(BODY_FONT,"italic"); doc.setFontSize(8); doc.setTextColor(...MID);
-    doc.text("Tornado chart not available. View the dashboard in a browser before exporting to include charts.", M, y+10);
-    y += 20;
+  // --- Native tornado chart ---
+  {
+    const sensData = res.sensitivity.slice(0, 10);
+    if (sensData.length > 0) {
+      const maxMag = Math.max(...sensData.map(s => Math.max(Math.abs(s.delta_up), Math.abs(s.delta_dn))));
+      const chartX = M + 140, chartW = CW - 180, chartY = y, barH = 16, gap = 4;
+      const centerX = chartX + chartW / 2;
+
+      sensData.forEach((s, i) => {
+        const by = chartY + i * (barH + gap);
+        // Upside bar (right of center)
+        const upW = maxMag > 0 ? (Math.abs(s.delta_up) / maxMag) * (chartW / 2) : 0;
+        doc.setFillColor(55, 130, 85);
+        doc.rect(centerX, by, upW, barH, "F");
+        // Downside bar (left of center)
+        const dnW = maxMag > 0 ? (Math.abs(s.delta_dn) / maxMag) * (chartW / 2) : 0;
+        doc.setFillColor(180, 60, 60);
+        doc.rect(centerX - dnW, by, dnW, barH, "F");
+        // Label
+        const slabel = (s.label || s.id);
+        const shortL = slabel.length > 30 ? slabel.slice(0, 28) + ".." : slabel;
+        doc.setFont(BODY_FONT,"normal"); doc.setFontSize(6); doc.setTextColor(...DARK);
+        doc.text(shortL, chartX - 4, by + barH / 2 + 2, { align: "right" });
+      });
+
+      // Center axis
+      doc.setDrawColor(100, 100, 100); doc.setLineWidth(0.5);
+      doc.line(centerX, chartY - 2, centerX, chartY + sensData.length * (barH + gap));
+      doc.setLineWidth(0.2);
+
+      // Legend
+      const legY = chartY + sensData.length * (barH + gap) + 6;
+      doc.setFillColor(55, 130, 85); doc.rect(centerX + 10, legY, 8, 6, "F");
+      doc.setFont(HEAD_FONT,"normal"); doc.setFontSize(6); doc.setTextColor(...MID);
+      doc.text("+20%", centerX + 22, legY + 5);
+      doc.setFillColor(180, 60, 60); doc.rect(centerX - 30, legY, 8, 6, "F");
+      doc.text("-20%", centerX - 18, legY + 5);
+
+      y = legY + 16;
+    }
   }
 
   y = label("Sensitivity Table (each input varied +/- 20%)", y);
@@ -6074,10 +6194,20 @@ async function exportPDF() {
   y = newPage("Assumptions & Methodology");
   y = body("The table below lists every numeric assumption used in this projection together with its source, evidence basis, confidence level, and citation reference. Confidence levels (high, medium, low) indicate how well-established each value is in published literature and directly determine the width of the Monte Carlo uncertainty perturbation applied to that input. Values entered by the user or adjusted by the AI analyst are flagged separately.", y, 8);
   y += 8;
+  // Build select option label lookup: { field_id: { value: label } }
+  const selectLabels = {};
+  WIZARD_SECTIONS.forEach(s => {
+    (s.fields || []).forEach(f => {
+      if (f.type === "select" && Array.isArray(f.options)) {
+        selectLabels[f.id] = {};
+        f.options.forEach(o => { selectLabels[f.id][o.value] = o.label; });
+      }
+    });
+  });
   const domains = Array.from(new Set(state.ledger.map(e=>e.domain))).sort();
   domains.forEach(dom=>{
     const rows = state.ledger.filter(e=>e.domain===dom).map(e=>{
-      const v = e.unit==="currency"?pdfM(e.value):e.unit==="pct"?pdfP(e.value):pdfN(e.value,2);
+      const v = typeof e.value === "string" ? (selectLabels[e.id] && selectLabels[e.id][e.value] || e.value.replace(/_/g," ")) : e.unit==="currency"?pdfM(e.value):e.unit==="pct"?pdfP(e.value):pdfN(e.value,2);
       const c = e.citation_id&&keyToNum[e.citation_id]?"["+keyToNum[e.citation_id]+"]":"";
       // Source: human-readable type label + detail
       const srcTypeLabel = e.user_modified ? "User-entered" : e.ai_modified ? "AI-adjusted" : "Published benchmark";
@@ -6098,7 +6228,8 @@ async function exportPDF() {
       bodyStyles:{fontSize:6.5,cellPadding:2,font:BODY_FONT},
       styles:{font:BODY_FONT,cellPadding:2,overflow:"linebreak"},
       alternateRowStyles:{fillColor:[250,250,252]},
-      columnStyles:{0:{cellWidth:90},1:{halign:"right",cellWidth:55},2:{cellWidth:100},3:{cellWidth:130,fontSize:6},4:{cellWidth:42},5:{halign:"center",cellWidth:22}},
+      tableWidth:CW,
+      columnStyles:{0:{cellWidth:"auto"},1:{halign:"right",cellWidth:"auto"},2:{cellWidth:"auto"},3:{fontSize:5.5,cellWidth:"auto"},4:{cellWidth:"auto"},5:{halign:"center",cellWidth:"auto"}},
       margin:{left:M,right:M} });
     y = doc.lastAutoTable.finalY + 6;
   });
