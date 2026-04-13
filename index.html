@@ -1744,7 +1744,7 @@ const HOSPITAL_SECTIONS = [
 const DIAG_LAB_SECTIONS = [
   "clinical_ops", "consults", "equipment", "staffing_changes", "archive",
   "material_loss", "legal", "projection", "hub_spoke", "subspecialty_routing",
-  "commercial_growth", "consult_revenue", "revenue_strategic",
+  "commercial_growth", "consult_revenue", "telepathology", "revenue_strategic",
 ];
 const DIAG_CHAIN_SECTIONS = [
   ...DIAG_LAB_SECTIONS, "data_monetization",
@@ -1988,7 +1988,7 @@ const REGIONS = {
         procurement_model: "direct vendor + owner decision",
         staffing_model: "lean_single_site",
         reimbursement_landscape: "self-pay / limited insurance / B2B",
-        relevant_pillars_hint: ["slide_movement", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "productivity"],
+        relevant_pillars_hint: ["slide_movement", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "telepathology_revenue", "productivity"],
         visible_sections: DIAG_LAB_SECTIONS,
         defaults: {
           annual_slide_volume: 45000,
@@ -2047,6 +2047,20 @@ const REGIONS = {
           tat_reputation_factor: 0.04,
           consult_price_per_case_external: 1500,
           projected_consult_volume_growth_pct: 0.35,
+          // telepathology
+          telepatho_client_institutions: 15,
+          telepatho_new_clients_yr1: 3,
+          telepatho_new_clients_yr2: 7,
+          telepatho_new_clients_yr3: 12,
+          telepatho_cases_per_client_month: 40,
+          telepatho_case_volume_growth_pct: 0.15,
+          telepatho_fee_per_case: 350,
+          telepatho_fee_escalation_pct: 0.05,
+          telepatho_path_compensation: "per_case",
+          telepatho_pathologist_pct_dedicated: 0.30,
+          telepatho_path_cost_per_case: 120,
+          telepatho_platform_cost_annual: 180000,
+          telepatho_support_fte_cost_annual: 300000,
           discount_rate: 0.10,
           horizon_years: 5,
           inflation_rate: 0.055,
@@ -2059,6 +2073,10 @@ const REGIONS = {
           external_consult_cost: b("Indian B2B subspecialty consult pricing", "Out-of-network second-opinion fees charged by national chains and academic centers.", "medium"),
           margin_per_case: b("CRISIL Indian diagnostics margin study", "Standalone lab gross margin per histopathology case after consumables and labor attribution.", "medium", "crisil_diagnostics_2023"),
           ramp_y1: b("Vodovnik 2024 adjusted for smaller site", "Smaller labs tend to realize productivity faster due to shorter validation cycle.", "medium", "vodovnik2024"),
+          telepatho_client_institutions: b("Tier-2/3 India hospital density", "District hospitals, CHCs, and smaller private hospitals lacking full-time pathology within 50–100 km radius.", "medium"),
+          telepatho_fee_per_case: b("Indian telepathology fee benchmarks", "Rs. 250–500 range for remote primary histopathology reporting; competitive with courier-based second-opinion fees.", "medium"),
+          telepatho_cases_per_client_month: b("Small hospital histopathology volume data", "Typical district hospital or secondary care hospital generates 25–60 histopath cases per month.", "medium", "crisil_diagnostics_2023"),
+          telepatho_path_cost_per_case: b("Indian telepathology reporting market rates", "Per-case reporting fees paid to contract pathologists in India; Rs. 80–200 per case depending on complexity.", "medium"),
         },
       },
 
@@ -2070,7 +2088,7 @@ const REGIONS = {
         procurement_model: "direct vendor + chain central procurement",
         staffing_model: "hub_spoke_shared",
         reimbursement_landscape: "self-pay / insurance / B2B / corporate wellness",
-        relevant_pillars_hint: ["hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "slide_movement"],
+        relevant_pillars_hint: ["hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "telepathology_revenue", "slide_movement"],
         visible_sections: DIAG_LAB_SECTIONS,
         defaults: {
           annual_slide_volume: 320000,
@@ -2131,6 +2149,20 @@ const REGIONS = {
           consult_price_per_case_external: 1400,
           projected_consult_volume_growth_pct: 0.55,
           pricing_pressure_level: "high",
+          // telepathology
+          telepatho_client_institutions: 40,
+          telepatho_new_clients_yr1: 8,
+          telepatho_new_clients_yr2: 18,
+          telepatho_new_clients_yr3: 30,
+          telepatho_cases_per_client_month: 50,
+          telepatho_case_volume_growth_pct: 0.12,
+          telepatho_fee_per_case: 320,
+          telepatho_fee_escalation_pct: 0.05,
+          telepatho_path_compensation: "fixed",
+          telepatho_pathologist_pct_dedicated: 0.50,
+          telepatho_path_cost_per_case: 100,
+          telepatho_platform_cost_annual: 400000,
+          telepatho_support_fte_cost_annual: 600000,
           discount_rate: 0.09,
           horizon_years: 5,
           inflation_rate: 0.055,
@@ -2156,7 +2188,7 @@ const REGIONS = {
         procurement_model: "enterprise procurement + national contracts",
         staffing_model: "centralized_subspecialty",
         reimbursement_landscape: "insurance / self-pay / B2B / corporate wellness / government tie-ups",
-        relevant_pillars_hint: ["hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "data_monetization", "strategic"],
+        relevant_pillars_hint: ["hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "telepathology_revenue", "data_monetization", "strategic"],
         visible_sections: DIAG_CHAIN_SECTIONS,
         defaults: {
           annual_slide_volume: 1800000,
@@ -2217,6 +2249,20 @@ const REGIONS = {
           consult_price_per_case_external: 1800,
           projected_consult_volume_growth_pct: 0.80,
           pricing_pressure_level: "moderate",
+          // telepathology
+          telepatho_client_institutions: 200,
+          telepatho_new_clients_yr1: 30,
+          telepatho_new_clients_yr2: 80,
+          telepatho_new_clients_yr3: 150,
+          telepatho_cases_per_client_month: 60,
+          telepatho_case_volume_growth_pct: 0.10,
+          telepatho_fee_per_case: 400,
+          telepatho_fee_escalation_pct: 0.05,
+          telepatho_path_compensation: "fixed",
+          telepatho_pathologist_pct_dedicated: 1.50,
+          telepatho_path_cost_per_case: 100,
+          telepatho_platform_cost_annual: 2500000,
+          telepatho_support_fte_cost_annual: 4000000,
           // data monetization
           curated_dataset_size_tb: 85,
           dataset_value_per_tb: 4800000,
@@ -2403,7 +2449,7 @@ const REGIONS = {
         procurement_model: "direct vendor + owner decision",
         staffing_model: "lean_single_site",
         reimbursement_landscape: "CMS Clinical Lab Fee Schedule / commercial / self-pay",
-        relevant_pillars_hint: ["slide_movement", "subspecialty_routing", "commercial_growth", "consult_revenue_scale"],
+        relevant_pillars_hint: ["slide_movement", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "telepathology_revenue"],
         visible_sections: DIAG_LAB_SECTIONS,
         defaults: {
           annual_slide_volume: 85000,
@@ -2461,6 +2507,20 @@ const REGIONS = {
           tat_reputation_factor: 0.04,
           consult_price_per_case_external: 180,
           projected_consult_volume_growth_pct: 0.40,
+          // telepathology
+          telepatho_client_institutions: 10,
+          telepatho_new_clients_yr1: 2,
+          telepatho_new_clients_yr2: 5,
+          telepatho_new_clients_yr3: 8,
+          telepatho_cases_per_client_month: 25,
+          telepatho_case_volume_growth_pct: 0.10,
+          telepatho_fee_per_case: 45,
+          telepatho_fee_escalation_pct: 0.03,
+          telepatho_path_compensation: "per_case",
+          telepatho_pathologist_pct_dedicated: 0.25,
+          telepatho_path_cost_per_case: 18,
+          telepatho_platform_cost_annual: 24000,
+          telepatho_support_fte_cost_annual: 35000,
           discount_rate: 0.06,
           horizon_years: 5,
           inflation_rate: 0.03,
@@ -2481,7 +2541,7 @@ const REGIONS = {
         procurement_model: "enterprise procurement",
         staffing_model: "centralized_subspecialty",
         reimbursement_landscape: "commercial / Medicare / Medicaid / B2B corporate contracts",
-        relevant_pillars_hint: ["hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "data_monetization"],
+        relevant_pillars_hint: ["hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "telepathology_revenue", "data_monetization"],
         visible_sections: DIAG_CHAIN_SECTIONS,
         defaults: {
           annual_slide_volume: 4500000,
@@ -2541,6 +2601,20 @@ const REGIONS = {
           consult_price_per_case_external: 210,
           projected_consult_volume_growth_pct: 0.65,
           pricing_pressure_level: "moderate",
+          // telepathology
+          telepatho_client_institutions: 80,
+          telepatho_new_clients_yr1: 12,
+          telepatho_new_clients_yr2: 30,
+          telepatho_new_clients_yr3: 55,
+          telepatho_cases_per_client_month: 40,
+          telepatho_case_volume_growth_pct: 0.08,
+          telepatho_fee_per_case: 55,
+          telepatho_fee_escalation_pct: 0.03,
+          telepatho_path_compensation: "fixed",
+          telepatho_pathologist_pct_dedicated: 2.00,
+          telepatho_path_cost_per_case: 20,
+          telepatho_platform_cost_annual: 180000,
+          telepatho_support_fte_cost_annual: 250000,
           curated_dataset_size_tb: 480,
           dataset_value_per_tb: 85000,
           partnership_deal_npv: 24000000,
@@ -3628,6 +3702,20 @@ const FIELD_LABELS = {
   dataset_value_per_tb: "Dataset value per TB",
   partnership_deal_npv: "Partnership deal NPV",
   pharma_partnership_pipeline: "Pharma partnerships in pipeline",
+  // telepathology
+  telepatho_client_institutions: "Potential telepathology client institutions",
+  telepatho_new_clients_yr1: "New telepathology clients — Year 1",
+  telepatho_new_clients_yr2: "New telepathology clients — Year 2",
+  telepatho_new_clients_yr3: "New telepathology clients — Year 3+",
+  telepatho_cases_per_client_month: "Cases per client per month",
+  telepatho_case_volume_growth_pct: "Annual case volume growth per client",
+  telepatho_fee_per_case: "Telepathology reporting fee per case",
+  telepatho_fee_escalation_pct: "Annual fee escalation",
+  telepatho_path_compensation: "Pathologist compensation model",
+  telepatho_pathologist_pct_dedicated: "Pathologist FTE % dedicated to telepathology",
+  telepatho_path_cost_per_case: "Pathologist cost per telepathology case",
+  telepatho_platform_cost_annual: "Telepathology platform cost (annual)",
+  telepatho_support_fte_cost_annual: "Telepathology support FTE cost (annual)",
 };
 
 const FIELD_DOMAINS = {
@@ -3665,6 +3753,13 @@ const FIELD_DOMAINS = {
   pricing_pressure_level: "commercial_growth",
   curated_dataset_size_tb: "data_monetization", dataset_value_per_tb: "data_monetization",
   partnership_deal_npv: "data_monetization", pharma_partnership_pipeline: "data_monetization",
+  telepatho_client_institutions: "telepathology", telepatho_new_clients_yr1: "telepathology",
+  telepatho_new_clients_yr2: "telepathology", telepatho_new_clients_yr3: "telepathology",
+  telepatho_cases_per_client_month: "telepathology", telepatho_case_volume_growth_pct: "telepathology",
+  telepatho_fee_per_case: "telepathology", telepatho_fee_escalation_pct: "telepathology",
+  telepatho_path_compensation: "telepathology", telepatho_pathologist_pct_dedicated: "telepathology",
+  telepatho_path_cost_per_case: "telepathology",
+  telepatho_platform_cost_annual: "telepathology", telepatho_support_fte_cost_annual: "telepathology",
 };
 
 const FIELD_CATEGORIES = {
@@ -3673,6 +3768,7 @@ const FIELD_CATEGORIES = {
   ims_license_annual: "operational", ims_support_annual: "operational",
   storage_cost_per_tb_year: "operational", egress_cost_annual: "operational", courier_cost_annual: "operational",
   pathologist_salary_annual: "operational", histotech_salary_annual: "operational",
+  telepatho_platform_cost_annual: "operational", telepatho_support_fte_cost_annual: "operational",
 };
 
 const FIELD_UNITS = {
@@ -3692,6 +3788,10 @@ const FIELD_UNITS = {
   burnout_risk_score: "pct", subspecialty_out_referral_pct: "pct", subspecialty_retained_with_digital_pct: "pct",
   referrer_retention_uplift_pct: "pct", tat_reputation_factor: "pct", projected_consult_volume_growth_pct: "pct",
   sample_loss_rate: "pct",
+  telepatho_fee_per_case: "currency", telepatho_path_cost_per_case: "currency",
+  telepatho_platform_cost_annual: "currency", telepatho_support_fte_cost_annual: "currency",
+  telepatho_pathologist_pct_dedicated: "pct", telepatho_case_volume_growth_pct: "pct",
+  telepatho_fee_escalation_pct: "pct",
 };
 
 
@@ -3989,6 +4089,33 @@ const WIZARD_SECTIONS = [
       money("consult_price_per_case_external", "External consult price per case"),
       pct("projected_consult_volume_growth_pct", "Projected consult volume growth (5yr)"),
       pct("tat_reputation_factor", "TAT reputation factor"),
+    ],
+  },
+
+  {
+    id: "telepathology",
+    title: "Telepathology & practice growth",
+    eyebrow: "Remote reporting revenue",
+    description: "Model net-new revenue from offering telepathology services — remote primary reporting, subspecialty second opinions, and reference-lab services for hospitals and clinics lacking in-house pathology. This is often the dominant value driver for labs expanding beyond their physical footprint. Enter your expected client ramp, case volume per client, and fees.",
+    pillar_tags: ["telepathology_revenue"],
+    visible_when: isDiagLab,
+    fields: [
+      num("telepatho_client_institutions", "Potential client institutions"),
+      num("telepatho_new_clients_yr1",     "New clients — Year 1"),
+      num("telepatho_new_clients_yr2",     "New clients — Year 2 (cumulative)"),
+      num("telepatho_new_clients_yr3",     "New clients — Year 3+ (steady state)"),
+      num("telepatho_cases_per_client_month", "Cases per client per month"),
+      pct("telepatho_case_volume_growth_pct", "Annual case volume growth per client (%)"),
+      money("telepatho_fee_per_case",      "Reporting fee per case"),
+      pct("telepatho_fee_escalation_pct",  "Annual fee escalation (%)"),
+      select("telepatho_path_compensation", "Pathologist compensation model", [
+        { value: "fixed", label: "Fixed salary (% of FTE)" },
+        { value: "per_case", label: "Per-case reporting fee" },
+      ]),
+      pct("telepatho_pathologist_pct_dedicated", "Pathologist FTE % dedicated (if fixed)"),
+      money("telepatho_path_cost_per_case",      "Pathologist cost per case (if per-case)"),
+      money("telepatho_platform_cost_annual",    "Platform cost (annual)"),
+      money("telepatho_support_fte_cost_annual",  "Support FTE cost (annual)"),
     ],
   },
 
@@ -4404,6 +4531,46 @@ function pillar_data_monetization(ramp) {
   return (dataset * valPerTb * 0.05 + partnership) * ramp;
 }
 
+function pillar_telepathology_revenue(ramp, year) {
+  // Client ramp: year-specific client count (business development ramp)
+  const yr1 = get("telepatho_new_clients_yr1");
+  const yr2 = get("telepatho_new_clients_yr2");
+  const yr3 = get("telepatho_new_clients_yr3");
+  const clients = year <= 1 ? yr1 : year === 2 ? yr2 : yr3;
+
+  // Volume per client compounds YoY (existing clients send more as trust builds)
+  const baseCases = get("telepatho_cases_per_client_month");
+  const volGrowth = get("telepatho_case_volume_growth_pct") || 0;
+  const casesPerMonth = baseCases * Math.pow(1 + volGrowth, Math.max(0, year - 1));
+
+  // Fee compounds YoY (reputation, inflation, value-added services)
+  const baseFee = get("telepatho_fee_per_case");
+  const feeEsc = get("telepatho_fee_escalation_pct") || 0;
+  const fee = baseFee * Math.pow(1 + feeEsc, Math.max(0, year - 1));
+
+  const grossRevenue = clients * casesPerMonth * 12 * fee;
+
+  // Incremental costs — branch on compensation model
+  const compModel = get("telepatho_path_compensation") || "per_case";
+  let pathCost;
+  if (compModel === "per_case") {
+    const costPerCase = get("telepatho_path_cost_per_case");
+    pathCost = clients * casesPerMonth * 12 * costPerCase;
+  } else {
+    const pathSalary = get("pathologist_salary_annual");
+    const pctDedicated = get("telepatho_pathologist_pct_dedicated");
+    pathCost = pctDedicated * pathSalary;
+  }
+
+  // Platform + support costs scale with client ramp
+  const platformCost = get("telepatho_platform_cost_annual");
+  const supportCost = get("telepatho_support_fte_cost_annual");
+  const costScale = clients / Math.max(1, yr3);
+  const overheadCosts = (platformCost + supportCost) * costScale;
+
+  return Math.max(0, grossRevenue - pathCost - overheadCosts);
+}
+
 /* ----- Investment model ----- */
 
 function computeInvestment() {
@@ -4453,6 +4620,7 @@ function computeYear(y, profile) {
     pillars.subspecialty_routing = pillar_subspecialty_routing(ramp);
     pillars.commercial_growth    = pillar_commercial_growth(ramp);
     pillars.consult_revenue_scale= pillar_consult_revenue_scale(ramp);
+    pillars.telepathology_revenue= pillar_telepathology_revenue(ramp, y);
     if (profile.visible_sections.includes("data_monetization")) {
       pillars.data_monetization  = pillar_data_monetization(ramp);
     }
@@ -4549,12 +4717,13 @@ function calculate() {
 function runSensitivity(profile, horizon, baselineNpv, discount) {
   const keys = profile.type === "hospital"
     ? ["annual_slide_volume","pathologist_salary_annual","scanner_cost","ramp_y3","storage_growth_tb_year","or_cost_per_minute","bed_cost_per_day","discount_rate"]
-    : ["annual_slide_volume","pathologist_salary_annual","scanner_cost","ramp_y3","storage_growth_tb_year","cost_per_inter_site_run","price_per_case","new_referrers_per_year_digital","discount_rate"];
+    : ["annual_slide_volume","pathologist_salary_annual","scanner_cost","ramp_y3","storage_growth_tb_year","cost_per_inter_site_run","price_per_case","new_referrers_per_year_digital","telepatho_fee_per_case","telepatho_new_clients_yr3","telepatho_cases_per_client_month","discount_rate"];
   const results = [];
   keys.forEach(k => {
     const idx = state.ledger.findIndex(e => e.id === k);
     if (idx < 0) return;
     const original = state.ledger[idx].value;
+    if (original === 0) return; // ±20% of 0 is 0; skip
     // +20% — direct mutation, no persist
     state.ledger[idx].value = original * 1.20;
     const npvUp = quickNPV(profile, horizon, discount);
@@ -4572,7 +4741,7 @@ function runSensitivity(profile, horizon, baselineNpv, discount) {
     });
   });
   results.sort((a, b) => b.magnitude - a.magnitude);
-  return results;
+  return results.filter(r => r.magnitude > 0);
 }
 
 function quickNPV(profile, horizon, discount) {
@@ -4678,6 +4847,7 @@ function pillarAttribution(pillarKey, mode) {
     commercial_growth:     "commercial_growth",
     consult_revenue_scale: "commercial_growth",
     data_monetization:     "strategic_asset",
+    telepathology_revenue: "commercial_growth",
   };
   return map[pillarKey] || "lab_opex";
 }
@@ -4697,6 +4867,7 @@ const PILLAR_LABELS = {
   commercial_growth:     "Commercial growth (B2B)",
   consult_revenue_scale: "Consult revenue scalability",
   data_monetization:     "Data monetization & AI",
+  telepathology_revenue: "Telepathology practice revenue",
 };
 
 
@@ -5515,11 +5686,11 @@ async function pdfExecutiveSummary() {
   const user = `${profileContext()}
 
 Projection:
-NPV: ${fmtCurrency(state.results && state.results.npv)}
-NPV 90% CI: ${state.results && state.results.mc ? fmtCurrency(state.results.mc.p5) + " – " + fmtCurrency(state.results.mc.p95) : "not available"}
+NPV: ${pdfM(state.results && state.results.npv)}
+NPV 90% CI: ${state.results && state.results.mc ? pdfM(state.results.mc.p5) + " – " + pdfM(state.results.mc.p95) : "not available"}
 Payback: Year ${state.results && state.results.paybackYear}
 ROI over horizon: ${(state.results && state.results.roiPct || 0).toFixed(1)}%
-Top pillars: ${state.results ? Object.entries(state.results.pillarTotals).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v]) => (PILLAR_LABELS[k]||k) + " = " + fmtCurrency(v)).join("; ") : ""}
+Top pillars: ${state.results ? Object.entries(state.results.pillarTotals).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v]) => (PILLAR_LABELS[k]||k) + " = " + pdfM(v)).join("; ") : ""}
 
 Write the executive summary now. 300-400 words. Start directly with the finding — no "this report provides" throat-clearing.`;
   const r = await callAI(system, user, { name: "pdfExecutiveSummary", maxTokens: 1800 });
@@ -5747,7 +5918,9 @@ async function exportPDF() {
   //  PAGE 3: EXECUTIVE SUMMARY + INSTITUTION PROFILE
   // ================================================================
   y = newPage("Executive Summary");
-  const summary = await pdfExecutiveSummary();
+  const rawSummary = await pdfExecutiveSummary();
+  // Sanitize non-ASCII currency symbols that jsPDF built-in fonts cannot render
+  const summary = rawSummary.replace(/₹/g, "Rs.").replace(/€/g, "EUR ").replace(/£/g, "GBP ").replace(/¥/g, "JPY ");
   y = body(summary, y, 9.5);
   y += 10;
   y = label("Institution Profile", y);
@@ -5906,9 +6079,11 @@ async function exportPDF() {
     const rows = state.ledger.filter(e=>e.domain===dom).map(e=>{
       const v = e.unit==="currency"?pdfM(e.value):e.unit==="pct"?pdfP(e.value):pdfN(e.value,2);
       const c = e.citation_id&&keyToNum[e.citation_id]?"["+keyToNum[e.citation_id]+"]":"";
-      // Source: show the descriptive source, not "default"
-      const src = e.source||"";
-      const srcShort = src.length > 55 ? src.slice(0,52)+"..." : src;
+      // Source: human-readable type label + detail
+      const srcTypeLabel = e.user_modified ? "User-entered" : e.ai_modified ? "AI-adjusted" : "Published benchmark";
+      const srcDetail = (e.source && e.source !== "ai_adjusted" && e.source !== "default" && e.source !== "region default" && e.source !== "user") ? e.source : "";
+      const srcText = srcDetail ? srcTypeLabel + " \u2014 " + srcDetail : srcTypeLabel;
+      const srcShort = srcText.length > 55 ? srcText.slice(0,52)+"..." : srcText;
       // Evidence basis as a readable note
       const basis = e.evidence_basis || e.source_detail || "";
       const basisShort = basis.length > 80 ? basis.slice(0,77)+"..." : basis;
