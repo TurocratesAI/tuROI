@@ -1222,7 +1222,7 @@ table.ledger .src-tag {
 }
 table.ledger .src-benchmark { background: var(--card); color: var(--ink-3); }
 table.ledger .src-user    { background: var(--forest-soft); color: var(--forest); border-color: var(--forest); }
-table.ledger .src-claude  { background: var(--spine-soft); color: var(--spine); border-color: var(--spine); }
+table.ledger .src-ai      { background: var(--spine-soft); color: var(--spine); border-color: var(--spine); }
 table.ledger .conf-high   { color: var(--forest); }
 table.ledger .conf-medium { color: var(--brass); }
 table.ledger .conf-low    { color: var(--spine); }
@@ -1484,7 +1484,7 @@ table.ledger .conf-low    { color: var(--spine); }
     </div>
     </div>
 
-    <p class="privacy">Data privacy — Turoi runs entirely in your browser. Inputs, the assumptions ledger, and results are stored only in localStorage. The only outbound traffic is to the Claude API when you request an advisory analysis. No analytics, no telemetry, no server-side persistence.</p>
+    <p class="privacy">Data privacy — Turoi runs entirely in your browser. Inputs, the assumptions ledger, and results are stored only in localStorage. The only outbound traffic is to the AI analyst API when you request an advisory analysis. No analytics, no telemetry, no server-side persistence.</p>
   </section>
 
   <!-- SCREEN: REGION -->
@@ -1635,7 +1635,7 @@ table.ledger .conf-low    { color: var(--spine); }
     <p class="narrative">Every number in Turoi is tracked here with its source, confidence, evidence basis, and any modification history. This ledger is the scientific-venture commitment: if a reviewer questions a result, they can trace every input to its origin and decide whether to trust it, modify it, or flag it for further research. Filter, verify, and export below.</p>
     <div class="ledger-filters">
       <div class="field"><label>Domain</label><select id="f-domain"><option value="">All</option></select></div>
-      <div class="field"><label>Source</label><select id="f-source"><option value="">All</option><option value="_benchmark">Benchmark (published)</option><option value="user">User-entered</option><option value="claude_adjusted">AI-analyst adjusted</option></select></div>
+      <div class="field"><label>Source</label><select id="f-source"><option value="">All</option><option value="_benchmark">Benchmark (published)</option><option value="user">User-entered</option><option value="ai_adjusted">AI-analyst adjusted</option></select></div>
       <div class="field"><label>Confidence</label><select id="f-confidence"><option value="">All</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></div>
       <div class="field"><label>Status</label><select id="f-status"><option value="">All</option><option value="unverified">Unverified</option><option value="verified">Verified</option><option value="disputed">Disputed</option></select></div>
       <div class="field"><label>Search</label><input type="text" id="f-search" placeholder="label or id…"></div>
@@ -1666,14 +1666,14 @@ table.ledger .conf-low    { color: var(--spine); }
     <div class="field">
       <label for="api-key-input">Anthropic API key</label>
       <input type="password" id="api-key-input" placeholder="sk-ant-...">
-      <div class="help">Required for the Claude-powered pre-estimation review, gap-filling, interpretation, and what-if chat. Turoi still works without a key — you will see raw pillar numbers with no narrative interpretation. The key is stored in this browser's localStorage and sent only to api.anthropic.com. To avoid pasting it every session you can also drop the key into <code>config.local.js</code> next to index.html — the page picks it up automatically on load.</div>
+      <div class="help">Required for the AI-powered pre-estimation review, gap-filling, interpretation, and what-if chat. Turoi still works without a key — you will see raw pillar numbers with no narrative interpretation. The key is stored in this browser's localStorage and sent only to api.anthropic.com. To avoid pasting it every session you can also drop the key into <code>config.local.js</code> next to index.html — the page picks it up automatically on load.</div>
     </div>
     <div class="field">
       <label for="api-model-input">AI-analyst model</label>
       <select id="api-model-input">
-        <option value="claude-sonnet-4-20250514">claude-sonnet-4-20250514 (recommended)</option>
-        <option value="claude-opus-4-20250514">claude-opus-4-20250514 (deeper reasoning, slower)</option>
-        <option value="claude-3-5-sonnet-20241022">claude-3-5-sonnet-20241022 (fallback)</option>
+        <option value="claude-sonnet-4-20250514">Recommended (fast, accurate)</option>
+        <option value="claude-opus-4-20250514">Advanced (deeper reasoning, slower)</option>
+        <option value="claude-3-5-sonnet-20241022">Fallback (legacy model)</option>
       </select>
     </div>
     <div class="field">
@@ -1709,7 +1709,7 @@ table.ledger .conf-low    { color: var(--spine); }
    Sections:
      1. REGIONS         — region profiles + institution types + basis records
      2. EVIDENCE        — primary-literature reference library
-     3. STATE + LEDGER  — app state, ledger helpers, claude audit log, persistence
+     3. STATE + LEDGER  — app state, ledger helpers, AI audit log, persistence
      4. WIZARD          — declarative sections + render + profile-aware visibility
      5. CALCULATOR      — year-by-year projection, pillars, NPV, sensitivity, Monte Carlo
      6. CHARTS          — Chart.js renderers for J-curve, waterfall, donut, tornado
@@ -3190,7 +3190,7 @@ const EVIDENCE = {
    Single top-level state object. All views read and write this.
    The ledger is the core scientific-venture commitment: every
    numeric value has provenance, confidence, and a modification
-   history. Every user input and Claude adjustment flows through
+   history. Every user input and AI adjustment flows through
    ledger helpers, not direct state mutation.
    ============================================================= */
 
@@ -3206,9 +3206,9 @@ const state = {
   audience: "department_head",
   wizard: {},                // { section_id: { field_id: value, ...skipped, ...timestamps } }
   ledger: [],                // array of ledger entries (see entry shape below)
-  claude_findings: [],       // output of preEstimationReview
-  claude_audit_log: [],      // full prompt/response log, redacted
-  claude_narrative_cache: {},// pillar narratives cached by pillar id
+  ai_findings: [],       // output of preEstimationReview
+  ai_audit_log: [],      // full prompt/response log, redacted
+  ai_narrative_cache: {},// pillar narratives cached by pillar id
   results: null,             // calculator output
   scenarios: [],             // up to 3 saved scenarios for compare
   api_key: null,
@@ -3227,11 +3227,11 @@ const state = {
   unit:             "currency",
   domain:           "staffing",
   category:         "operational",
-  source:           "default" | "user" | "claude_adjusted",
+  source:           "default" | "user" | "ai_adjusted",
   source_detail:    "7th CPC Level 13A midpoint",
   user_modified:    false,
-  claude_modified:  false,
-  claude_reasoning: null,
+  ai_modified:  false,
+  ai_reasoning: null,
   original_value:   null,     // populated when modified
   evidence_basis:   "Grade-pay-scaled monthly × 12 excluding NPA",
   confidence:       "high" | "medium" | "low",
@@ -3271,8 +3271,8 @@ const ledger = {
       source: srcText,
       source_detail: basis.reasoning || "",
       user_modified: false,
-      claude_modified: false,
-      claude_reasoning: null,
+      ai_modified: false,
+      ai_reasoning: null,
       original_value: null,
       evidence_basis: basis.reasoning || "",
       confidence: basis.confidence || "medium",
@@ -3306,8 +3306,8 @@ const ledger = {
         source: "user",
         source_detail: "user-entered in wizard",
         user_modified: true,
-        claude_modified: false,
-        claude_reasoning: null,
+        ai_modified: false,
+        ai_reasoning: null,
         original_value: null,
         evidence_basis: "User-provided value",
         confidence: "high",
@@ -3320,16 +3320,16 @@ const ledger = {
     }
   },
 
-  markClaudeAdjusted(id, newValue, reasoning, citationIds) {
+  markAIAdjusted(id, newValue, reasoning, citationIds) {
     const existing = ledger.byId(id);
     if (!existing) return;
     ledger.upsert({
       ...existing,
       value: newValue,
-      source: "claude_adjusted",
+      source: "ai_adjusted",
       source_detail: "Adjusted by AI analyst during pre-estimation review",
-      claude_modified: true,
-      claude_reasoning: reasoning,
+      ai_modified: true,
+      ai_reasoning: reasoning,
       original_value: existing.original_value == null ? existing.value : existing.original_value,
       citation_id: (citationIds && citationIds[0]) || existing.citation_id,
     });
@@ -3363,7 +3363,7 @@ const ledger = {
   },
 
   exportCSV() {
-    const cols = ["id","label","value","unit","domain","category","source","source_detail","confidence","citation_id","verification_status","evidence_basis","user_modified","claude_modified","claude_reasoning","original_value"];
+    const cols = ["id","label","value","unit","domain","category","source","source_detail","confidence","citation_id","verification_status","evidence_basis","user_modified","ai_modified","ai_reasoning","original_value"];
     const esc = v => {
       if (v == null) return "";
       const s = String(v).replace(/"/g, '""');
@@ -3393,20 +3393,20 @@ const ledger = {
   },
 };
 
-/* ----- Claude audit log -----
-   Every Claude call (including failures) logs a reproducibility
+/* ----- AI audit log -----
+   Every AI call (including failures) logs a reproducibility
    record. API key is redacted at capture time.
 */
 const audit = {
   log(entry) {
-    state.claude_audit_log.push({
+    state.ai_audit_log.push({
       ts: new Date().toISOString(),
       ...entry,
     });
     persist();
   },
   export() {
-    return JSON.stringify(state.claude_audit_log, null, 2);
+    return JSON.stringify(state.ai_audit_log, null, 2);
   },
 };
 
@@ -3461,9 +3461,9 @@ function resetSession() {
     audience: "department_head",
     wizard: {},
     ledger: [],
-    claude_findings: [],
-    claude_audit_log: [],
-    claude_narrative_cache: {},
+    ai_findings: [],
+    ai_audit_log: [],
+    ai_narrative_cache: {},
     results: null,
     scenarios: [],
     current_wizard_index: 0,
@@ -5032,7 +5032,7 @@ function renderLedgerTable() {
   const fsch = (document.getElementById("f-search").value || "").toLowerCase();
   const rows = state.ledger.filter(e => {
     if (fdom && e.domain !== fdom) return false;
-    if (fsrc === "_benchmark" && (e.user_modified || e.claude_modified)) return false;
+    if (fsrc === "_benchmark" && (e.user_modified || e.ai_modified)) return false;
     if (fsrc && fsrc !== "_benchmark" && e.source !== fsrc) return false;
     if (fconf && e.confidence !== fconf) return false;
     if (fst && e.verification_status !== fst) return false;
@@ -5051,8 +5051,8 @@ function renderLedgerTable() {
     const ev = e.citation_id ? EVIDENCE[e.citation_id] : null;
     const citeLabel = ev ? `${ev.authors.split(",")[0]} ${ev.year}` : "";
     // Source type tag
-    const srcType = e.user_modified ? "user" : e.claude_modified ? "claude" : "benchmark";
-    const srcTypeLabel = e.user_modified ? "User-entered" : e.claude_modified ? "AI-adjusted" : "Published benchmark";
+    const srcType = e.user_modified ? "user" : e.ai_modified ? "ai" : "benchmark";
+    const srcTypeLabel = e.user_modified ? "User-entered" : e.ai_modified ? "AI-adjusted" : "Published benchmark";
     // Truncated source text
     const srcShort = e.source.length > 60 ? e.source.slice(0,57)+"..." : e.source;
     h += `<tr>
@@ -5061,7 +5061,7 @@ function renderLedgerTable() {
       <td><span class="src-tag src-${srcType}">${srcTypeLabel}</span><div class="tiny" style="margin-top:2px;">${escapeHtml(srcShort)}</div></td>
       <td class="conf-${e.confidence}">${e.confidence}</td>
       <td class="tiny">${citeLabel}</td>
-      <td class="tiny" style="max-width: 300px;">${escapeHtml(e.evidence_basis || e.source_detail || "")}${e.claude_reasoning ? "<br><em>AI: "+escapeHtml(e.claude_reasoning)+"</em>" : ""}</td>
+      <td class="tiny" style="max-width: 300px;">${escapeHtml(e.evidence_basis || e.source_detail || "")}${e.ai_reasoning ? "<br><em>AI: "+escapeHtml(e.ai_reasoning)+"</em>" : ""}</td>
       <td class="tiny">${e.verification_status}</td>
       <td><button class="ghost small" data-verify="${e.id}">Verify</button></td>
     </tr>`;
@@ -5112,7 +5112,7 @@ function exportBibTeX() {
 }
 
 
-/* === SECTION 7: CLAUDE API ====================================
+/* === SECTION 7: AI ANALYST API ================================
    Seven integration points:
      1. refineRegion()         — post-subprofile defaults calibration
      2. preEstimationReview()  — sanity + gap-fill + edge cases
@@ -5121,11 +5121,11 @@ function exportBibTeX() {
      5. whatIfChat()           — chat with state-patch + re-run
      6. strengthenCase()       — weakest assumptions + data collection plan
      7. pdfExecutiveSummary()  — 250–400 word audience-tailored cover
-   All calls are audited to state.claude_audit_log with key redacted.
+   All calls are audited to state.ai_audit_log with key redacted.
    Graceful degradation if api_key is absent.
    ============================================================= */
 
-const CLAUDE_ENDPOINT = "https://api.anthropic.com/v1/messages";
+const AI_ENDPOINT = "https://api.anthropic.com/v1/messages";
 
 function hasApiKey() { return !!(state.api_key && state.api_key.length > 8); }
 
@@ -5157,7 +5157,7 @@ function ledgerSnapshot() {
     .join("\n");
 }
 
-async function callClaude(system, user, opts) {
+async function callAI(system, user, opts) {
   opts = opts || {};
   if (!hasApiKey()) {
     audit.log({ call: opts.name || "unknown", status: "skipped_no_key", system_len: system.length, user_len: user.length });
@@ -5170,7 +5170,7 @@ async function callClaude(system, user, opts) {
     messages: [{ role: "user", content: user }],
   };
   try {
-    const res = await fetch(CLAUDE_ENDPOINT, {
+    const res = await fetch(AI_ENDPOINT, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -5217,12 +5217,12 @@ async function refineRegion() {
   if (!hasApiKey()) return;
   const system = `You are a senior digital pathology economic consultant. Given an institution profile, refine default assumptions to match the institution's specific context. Return adjustments as JSON only: an array of { id, new_value, reasoning, citation_ids }. Only adjust values you have defensible reason to change. Be conservative — do not change values outside ±40% of the current default without strong reasoning.`;
   const user = `${profileContext()}\n\nCurrent defaults (from region profile):\n${ledgerSnapshot()}\n\nReturn JSON array of adjustments.`;
-  const r = await callClaude(system, user, { name: "refineRegion", jsonMode: true, maxTokens: 3000 });
+  const r = await callAI(system, user, { name: "refineRegion", jsonMode: true, maxTokens: 3000 });
   if (r.error || !r.data) return;
   const adjustments = Array.isArray(r.data) ? r.data : (r.data.adjustments || []);
   adjustments.forEach(a => {
     if (a && a.id && typeof a.new_value === "number") {
-      ledger.markClaudeAdjusted(a.id, a.new_value, a.reasoning, a.citation_ids);
+      ledger.markAIAdjusted(a.id, a.new_value, a.reasoning, a.citation_ids);
     }
   });
   persist();
@@ -5236,7 +5236,7 @@ async function preEstimationReview() {
   if (!hasApiKey()) {
     status.innerHTML = `<div class="banner warn">AI-analyst review not available. Add an API key in Settings to unlock the pre-estimation review. The calculator will still run on your inputs as entered — you can proceed directly.</div>`;
     list.innerHTML = "";
-    state.claude_findings = [];
+    state.ai_findings = [];
     return;
   }
   status.innerHTML = `<div class="banner"><span><span class="spinner"></span>Running pre-estimation review…</span></div>`;
@@ -5264,13 +5264,13 @@ You must return findings as JSON only, shape:
 
 Focus on the top 8–12 most important findings. Do not list trivial concerns. For gap-fills, be explicit that the user skipped the section. For diagnostic-lab profiles, weight logistics, commercial growth, and consult revenue heavily. For hospital profiles, weight OR cost attribution and LOS carefully.`;
   const user = `${profileContext()}\n\nLedger snapshot:\n${ledgerSnapshot()}\n\nReturn JSON only.`;
-  const r = await callClaude(system, user, { name: "preEstimationReview", jsonMode: true, maxTokens: 4000 });
+  const r = await callAI(system, user, { name: "preEstimationReview", jsonMode: true, maxTokens: 4000 });
   if (r.error || !r.data) {
     status.innerHTML = `<div class="banner error">Pre-estimation review failed: ${r.error || "parse error"}. You can re-run, fix the API key in Settings, or proceed directly to compute on your inputs.</div>`;
     return;
   }
   const findings = (r.data.findings || r.data).slice(0, 15);
-  state.claude_findings = findings;
+  state.ai_findings = findings;
   status.innerHTML = `<div class="banner">AI analyst returned ${findings.length} findings. Accept, modify, or ignore each below. Decisions are logged to the assumptions ledger.</div>`;
   renderFindings();
   persist();
@@ -5279,7 +5279,7 @@ Focus on the top 8–12 most important findings. Do not list trivial concerns. F
 function renderFindings() {
   const list = document.getElementById("findings-list");
   list.innerHTML = "";
-  state.claude_findings.forEach((f, i) => {
+  state.ai_findings.forEach((f, i) => {
     const card = document.createElement("div");
     card.className = "finding severity-" + (f.severity || "medium");
     const diff = (f.current_value != null && f.suggested_value != null)
@@ -5307,11 +5307,11 @@ function renderFindings() {
 }
 
 function handleFindingAction(idx, action, btn) {
-  const f = state.claude_findings[idx];
+  const f = state.ai_findings[idx];
   if (!f) return;
   const card = btn.closest(".finding");
   if (action === "accept" && f.id && f.suggested_value != null) {
-    ledger.markClaudeAdjusted(f.id, f.suggested_value, f.reasoning || "", f.citation_ids || []);
+    ledger.markAIAdjusted(f.id, f.suggested_value, f.reasoning || "", f.citation_ids || []);
     card.classList.add("accepted");
     toast("Accepted — logged to ledger");
   } else if (action === "modify" && f.id) {
@@ -5319,7 +5319,7 @@ function handleFindingAction(idx, action, btn) {
     if (val != null && val !== "") {
       const n = parseFloat(val);
       if (!isNaN(n)) {
-        ledger.markClaudeAdjusted(f.id, n, "User-modified AI-analyst suggestion: " + (f.reasoning || ""), f.citation_ids || []);
+        ledger.markAIAdjusted(f.id, n, "User-modified AI-analyst suggestion: " + (f.reasoning || ""), f.citation_ids || []);
         card.classList.add("accepted");
         toast("Modified — logged to ledger");
       }
@@ -5373,7 +5373,7 @@ Return JSON only:
   "headline": "one-sentence headline for a ${audience}",
   "body": "2-paragraph analytical interpretation (150-220 words)"
 }`;
-  const r = await callClaude(system, user, { name: "dashboardInsight", jsonMode: true, maxTokens: 1400 });
+  const r = await callAI(system, user, { name: "dashboardInsight", jsonMode: true, maxTokens: 1400 });
   if (r.error || !r.data) {
     title.textContent = "Headline insight unavailable";
     body.textContent = "AI-analyst call failed. See audit log in Methodology tab.";
@@ -5387,7 +5387,7 @@ Return JSON only:
 
 /* === integration point 4: dynamicPillarNarrative === */
 async function dynamicPillarNarrative(pillarKey) {
-  if (state.claude_narrative_cache[pillarKey]) return state.claude_narrative_cache[pillarKey];
+  if (state.ai_narrative_cache[pillarKey]) return state.ai_narrative_cache[pillarKey];
   if (!hasApiKey()) return "Add an AI-analyst API key in Settings to see pillar narratives.";
   const value = state.results && state.results.pillarTotals[pillarKey];
   const system = `You explain a single value pillar in a digital pathology economic projection. Analytical voice, no marketing language. Cite assumptions by name. 2-3 short paragraphs.`;
@@ -5400,9 +5400,9 @@ Ledger excerpt:
 ${ledgerSnapshot()}
 
 Explain what this number represents for this institution, which assumptions drive it, and what could make it materially larger or smaller.`;
-  const r = await callClaude(system, user, { name: "dynamicPillarNarrative:" + pillarKey, maxTokens: 1200 });
+  const r = await callAI(system, user, { name: "dynamicPillarNarrative:" + pillarKey, maxTokens: 1200 });
   const text = (r && r.text) || "Narrative unavailable.";
-  state.claude_narrative_cache[pillarKey] = text;
+  state.ai_narrative_cache[pillarKey] = text;
   persist();
   return text;
 }
@@ -5435,7 +5435,7 @@ Conversation so far:
 ${historyText}
 
 User's latest message is the last USER turn above. Respond as JSON.`;
-  const r = await callClaude(system, user, { name: "whatIfChat", jsonMode: true, maxTokens: 2000 });
+  const r = await callAI(system, user, { name: "whatIfChat", jsonMode: true, maxTokens: 2000 });
   if (r.error || !r.data) {
     const reply = "Advisor call failed. " + (r.error || "parse error");
     state.chat_history.push({ role: "assistant", content: reply });
@@ -5445,7 +5445,7 @@ User's latest message is the last USER turn above. Respond as JSON.`;
   if (Array.isArray(r.data.state_patch) && r.data.state_patch.length) {
     r.data.state_patch.forEach(p => {
       if (p && p.id && typeof p.new_value === "number") {
-        ledger.markClaudeAdjusted(p.id, p.new_value, p.reasoning || "what-if patch", []);
+        ledger.markAIAdjusted(p.id, p.new_value, p.reasoning || "what-if patch", []);
       }
     });
     state.results = calculate();
@@ -5478,7 +5478,7 @@ Ledger snapshot (focus on low and medium confidence):
 ${ledgerSnapshot()}
 
 Return JSON only.`;
-  const r = await callClaude(system, user, { name: "strengthenCase", jsonMode: true, maxTokens: 2000 });
+  const r = await callAI(system, user, { name: "strengthenCase", jsonMode: true, maxTokens: 2000 });
   if (r.error || !r.data) {
     toast("Strengthen-case failed: " + (r.error || "parse error"));
     return;
@@ -5522,7 +5522,7 @@ ROI over horizon: ${(state.results && state.results.roiPct || 0).toFixed(1)}%
 Top pillars: ${state.results ? Object.entries(state.results.pillarTotals).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v]) => (PILLAR_LABELS[k]||k) + " = " + fmtCurrency(v)).join("; ") : ""}
 
 Write the executive summary now. 300-400 words. Start directly with the finding — no "this report provides" throat-clearing.`;
-  const r = await callClaude(system, user, { name: "pdfExecutiveSummary", maxTokens: 1800 });
+  const r = await callAI(system, user, { name: "pdfExecutiveSummary", maxTokens: 1800 });
   if (r.error) return "Executive summary generation failed: " + r.error;
   return r.text || "Executive summary unavailable.";
 }
@@ -6226,7 +6226,7 @@ function boot() {
     downloadFile("turoi_ledger.json", ledger.exportJSON(), "application/json");
   });
   document.getElementById("btn-audit-log").addEventListener("click", () => {
-    const log = state.claude_audit_log.slice(-50);
+    const log = state.ai_audit_log.slice(-50);
     const html = `<h2>AI-analyst audit log</h2>
       <p class="tiny">Last 50 calls. Full log exportable below. API keys redacted at capture.</p>
       <div style="max-height:50vh; overflow-y:auto;">${log.map(e => `
@@ -6243,7 +6243,7 @@ function boot() {
     openModal(html);
     document.getElementById("btn-audit-close").addEventListener("click", closeModal);
     document.getElementById("btn-audit-export").addEventListener("click", () => {
-      downloadFile("turoi_claude_audit_log.json", audit.export(), "application/json");
+      downloadFile("turoi_ai_audit_log.json", audit.export(), "application/json");
     });
   });
 
@@ -6334,9 +6334,9 @@ function runLedgerTests() {
   ledger.setUserValue("test_a", 150, "Test A", "test", "operational");
   const e = ledger.byId("test_a");
   results.push(e.value === 150 && e.user_modified && e.original_value === 100 ? "PASS setUserValue" : "FAIL setUserValue");
-  ledger.markClaudeAdjusted("test_a", 175, "claude reasoning", ["hanna2019"]);
+  ledger.markAIAdjusted("test_a", 175, "AI reasoning", ["hanna2019"]);
   const e2 = ledger.byId("test_a");
-  results.push(e2.value === 175 && e2.claude_modified ? "PASS markClaudeAdjusted" : "FAIL markClaudeAdjusted");
+  results.push(e2.value === 175 && e2.ai_modified ? "PASS markAIAdjusted" : "FAIL markAIAdjusted");
   return results;
 }
 
