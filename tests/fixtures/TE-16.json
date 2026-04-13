@@ -1,0 +1,29 @@
+{
+  "id": "TE-16",
+  "theme": "E_gap_finding",
+  "title": "Incremental deployment — lab already has 1 scanner, adding 2 more",
+  "region": "india",
+  "profile": "hyperlocal_diagnostic_chain",
+  "description": "Lab already has 1 scanner purchased in 2022 that has been running for 3 years, and is now adding 2 more scanners. edge_cases.md flags incremental-vs-greenfield as the FIRST question Claude review should ask, but there is no wizard affordance for it. Expected outcome: the calculator treats this as a fresh greenfield deployment, double-counting capex and ramp against a baseline that already has partial productivity gains.",
+  "overrides": {
+    "scanner_count": 2,
+    "implementation_cost": 1800000,
+    "validation_cost": 600000
+  },
+  "expected": {
+    "npv_min": 20000000,
+    "npv_max": 800000000,
+    "payback_year_min": 1,
+    "payback_year_max": 5,
+    "dominant_pillars": ["commercial_growth", "subspecialty_routing", "hub_spoke_logistics"],
+    "zero_pillars": ["patient_flow", "surgical_impact", "data_monetization"],
+    "comparative": {
+      "dpa_coverage": "missing — no incremental mode",
+      "sectra_coverage": "missing",
+      "turoi_only_pillars": []
+    },
+    "notes": "EXPECTED OUTCOME: calculator runs and produces a fresh-deployment NPV. The finding is that if you were honest about the existing scanner, the incremental NPV should SUBTRACT the baseline scenario (what if the 1 existing scanner already delivered 30% of the productivity ramp for those 3 years). Outcome: wizard affordance for 'existing digital baseline' + a subtract-baseline calculation mode. This is flagged in edge_cases.md as 'should be first Claude review question'."
+  },
+  "gap_finding": true,
+  "citations": []
+}

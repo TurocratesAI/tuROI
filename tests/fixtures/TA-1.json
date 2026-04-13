@@ -1,0 +1,23 @@
+{
+  "id": "TA-1",
+  "theme": "A_baseline",
+  "title": "US Academic Medical Center — MSKCC-equivalent baseline",
+  "region": "us",
+  "profile": "academic_medical_center",
+  "description": "Large US academic medical center ~450k slides/yr, 28 pathologist FTE, 3 scanners. Anchored to Hanna 2019 (MSK, $1.3M/5yr projected savings) and Matias-Guiu 2025 (EU academic, 7-yr NPV positive by Y3).",
+  "overrides": {},
+  "expected": {
+    "npv_min": 500000,
+    "npv_max": 15000000,
+    "payback_year_min": 2,
+    "payback_year_max": 4,
+    "dominant_pillars": ["surgical_impact", "productivity", "waste_reduction"],
+    "zero_pillars": ["hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "data_monetization"],
+    "comparative": {
+      "dpa_coverage": "full",
+      "sectra_coverage": "full",
+      "turoi_only_pillars": []
+    }
+  },
+  "citations": ["hanna2019", "matias_guiu_2025", "childers2018"]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "TA-2",
+  "theme": "A_baseline",
+  "title": "EU public university hospital — Matias-Guiu 2025 reference case",
+  "region": "eu",
+  "profile": "public_university_hospital",
+  "description": "EU academic/public university hospital ~200k slides/yr. Anchored to Matias-Guiu et al. 2025 Virchows Archiv (7-yr NPV €0.21M, positive cash flow by Y3, 15% efficiency gain).",
+  "overrides": {},
+  "expected": {
+    "npv_min": 100000,
+    "npv_max": 5000000,
+    "payback_year_min": 2,
+    "payback_year_max": 5,
+    "dominant_pillars": ["productivity", "surgical_impact", "slide_movement"],
+    "zero_pillars": ["hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "data_monetization"],
+    "comparative": {
+      "dpa_coverage": "partial — US salary defaults would need manual override",
+      "sectra_coverage": "full — Sectra whitepaper is EU/Nordic-anchored",
+      "turoi_only_pillars": []
+    }
+  },
+  "citations": ["matias_guiu_2025", "vodovnik2024", "childers2018"]
+}

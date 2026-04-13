@@ -1,0 +1,29 @@
+{
+  "id": "TF-20",
+  "theme": "F_sensitivity",
+  "title": "Extreme high-volume reference lab — sensitivity and formatting stress",
+  "region": "us",
+  "profile": "national_reference_lab",
+  "description": "Mega-reference lab at extreme-high-volume (5M slides/yr, 220 pathologist FTE, 60 scanners). Tests Monte Carlo runtime with a large ledger, sensitivity analysis at extreme magnitudes, and dashboard large-number formatting (B / T thresholds).",
+  "overrides": {
+    "annual_slide_volume": 5000000,
+    "annual_case_volume": 2200000,
+    "pathologist_fte": 220,
+    "histotech_fte": 350,
+    "scanner_count": 60
+  },
+  "expected": {
+    "npv_min": 100000000,
+    "npv_max": 5000000000,
+    "payback_year_min": 1,
+    "payback_year_max": 4,
+    "dominant_pillars": ["commercial_growth", "hub_spoke_logistics", "subspecialty_routing"],
+    "zero_pillars": ["patient_flow", "surgical_impact"],
+    "comparative": {
+      "dpa_coverage": "missing — DPA not designed for mega-scale",
+      "sectra_coverage": "missing",
+      "turoi_only_pillars": ["hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "data_monetization"]
+    }
+  },
+  "citations": ["labcorp_10k_2023"]
+}

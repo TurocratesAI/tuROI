@@ -1,0 +1,37 @@
+{
+  "id": "TE-15",
+  "theme": "E_gap_finding",
+  "title": "Telepathology-only lab — cross-region, NOT MODELED",
+  "region": "india",
+  "profile": "standalone_diagnostic_lab",
+  "description": "India-based telepathology practice serving rural US clinics via digital signout. Zero on-site clinical presence, no glass slide movement, consult revenue is the ENTIRE business (not a side pillar). Reimbursement regime is US CPT codes at India cost base — cross-region arbitrage not captured in any region profile. Expected outcome: calculator runs but staffing model and reimbursement regime don't match the India standalone profile at all.",
+  "overrides": {
+    "annual_slide_volume": 0,
+    "annual_case_volume": 24000,
+    "consults_received_per_year": 24000,
+    "consults_sent_per_year": 0,
+    "consult_courier_cost_per_case": 0,
+    "scanner_count": 0,
+    "scanner_cost": 0,
+    "courier_cost_annual": 0,
+    "inter_site_runs_per_week": 0,
+    "b2b_referrers_current": 8,
+    "archive_sqft": 0
+  },
+  "expected": {
+    "npv_min": -10000000,
+    "npv_max": 50000000,
+    "payback_year_min": 1,
+    "payback_year_max": 7,
+    "dominant_pillars": ["commercial_growth", "consult_revenue_scale", "subspecialty_routing"],
+    "zero_pillars": ["patient_flow", "surgical_impact", "slide_movement", "hub_spoke_logistics", "data_monetization"],
+    "comparative": {
+      "dpa_coverage": "missing — no telepathology-first profile",
+      "sectra_coverage": "missing",
+      "turoi_only_pillars": []
+    },
+    "notes": "EXPECTED OUTCOME: Many pillars zero out because the fixture nulls the physical inputs. What remains (commercial_growth, consult_revenue_scale, subspecialty_routing) is real but uses India cost basis. The finding is that there is no cross-region reimbursement mode — the lab earns US dollars on US CPT codes but spends India rupees on operations. Outcome: feature request for a 'revenue_region' vs 'cost_region' split, or a dedicated 'telepathology_service' profile."
+  },
+  "gap_finding": true,
+  "citations": []
+}

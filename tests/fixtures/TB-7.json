@@ -1,0 +1,26 @@
+{
+  "id": "TB-7",
+  "theme": "B_lmic_government",
+  "title": "Indian government hospital — off-hours frozen sections (no OR chargeback)",
+  "region": "india",
+  "profile": "government_medical_college",
+  "description": "Same profile as TB-4 but with frozen sections performed off-hours where there is no OR chargeback to pathology. Tests attribution machinery: surgical_impact should ideally zero out when OR time is not a pathology-recoverable cost. Currently calculator has no off-hours toggle — expected behaviour is that Claude pre-review flags this, and the pillar still computes (calibration gap).",
+  "overrides": {
+    "or_cost_per_minute": 0
+  },
+  "expected": {
+    "npv_min": 5000000,
+    "npv_max": 150000000,
+    "payback_year_min": 2,
+    "payback_year_max": 5,
+    "dominant_pillars": ["productivity", "slide_movement", "patient_flow"],
+    "zero_pillars": ["surgical_impact", "hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "data_monetization"],
+    "comparative": {
+      "dpa_coverage": "missing — no off-hours / attribution toggle",
+      "sectra_coverage": "missing — no off-hours / attribution toggle",
+      "turoi_only_pillars": ["off_hours_fs_zero"]
+    },
+    "notes": "Test uses override or_cost_per_minute=0 as the closest in-code approximation to the off-hours case since there's no dedicated toggle. A proper fix would be a pillar-level suppression flag."
+  },
+  "citations": ["cpc7_india"]
+}

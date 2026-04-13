@@ -1,0 +1,23 @@
+{
+  "id": "TD-13",
+  "theme": "D_hub_spoke_chain",
+  "title": "US national reference lab — Quest/LabCorp scale stress test",
+  "region": "us",
+  "profile": "national_reference_lab",
+  "description": "US national reference lab at Quest/LabCorp tier (~4.5M slides/yr, 180 pathologist FTE, 45 scanners @ $195k). Stress test for large-scale inputs: capex > $10M, 2000-trial Monte Carlo on a large ledger, sensitivity analysis at extreme values. Watching for runtime degradation and large-number formatting.",
+  "overrides": {},
+  "expected": {
+    "npv_min": 50000000,
+    "npv_max": 1500000000,
+    "payback_year_min": 1,
+    "payback_year_max": 4,
+    "dominant_pillars": ["commercial_growth", "hub_spoke_logistics", "subspecialty_routing"],
+    "zero_pillars": ["patient_flow", "surgical_impact"],
+    "comparative": {
+      "dpa_coverage": "missing — DPA not designed for reference-lab scale",
+      "sectra_coverage": "missing",
+      "turoi_only_pillars": ["hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "data_monetization"]
+    }
+  },
+  "citations": ["labcorp_10k_2023"]
+}

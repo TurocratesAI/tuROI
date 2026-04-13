@@ -1,0 +1,32 @@
+{
+  "id": "TC-10",
+  "theme": "C_standalone_diag",
+  "title": "Single-pathologist owner-operator lab — capacity creation framing",
+  "region": "india",
+  "profile": "standalone_diagnostic_lab",
+  "description": "Tiny owner-operator lab (18k slides/yr, 1 pathologist FTE — the owner). Productivity 'savings' cannot be redeployed as FTE reduction because there's only one FTE. Edge case from research/edge_cases.md: handled by reframing pillar as 'capacity creation' in Claude narrative. Without Claude, the productivity pillar still computes numerically but the dashboard framing must change.",
+  "overrides": {
+    "annual_slide_volume": 18000,
+    "annual_case_volume": 9000,
+    "pathologist_fte": 1,
+    "histotech_fte": 2,
+    "b2b_referrers_current": 15,
+    "new_referrers_per_year_baseline": 1,
+    "new_referrers_per_year_digital": 3
+  },
+  "expected": {
+    "npv_min": -2000000,
+    "npv_max": 8000000,
+    "payback_year_min": 2,
+    "payback_year_max": 7,
+    "dominant_pillars": ["commercial_growth", "subspecialty_routing", "productivity"],
+    "zero_pillars": ["patient_flow", "surgical_impact", "data_monetization"],
+    "comparative": {
+      "dpa_coverage": "missing — DPA assumes multi-pathologist dept",
+      "sectra_coverage": "missing — same",
+      "turoi_only_pillars": ["capacity_creation_reframe"]
+    },
+    "notes": "With ANTHROPIC_API_KEY unset, the productivity pillar shows as raw FTE-time dollar value. In a full test run with Claude enabled, dashboardInsight() should reframe it as 'hours of additional case throughput capacity' not 'FTE cost saved'."
+  },
+  "citations": []
+}

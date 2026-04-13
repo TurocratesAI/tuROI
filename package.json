@@ -1,0 +1,12 @@
+{
+  "name": "turoi-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/harness/run.mjs",
+    "test:smoke": "node tests/harness/run.mjs --fixture TA-1"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}

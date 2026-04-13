@@ -1,0 +1,26 @@
+{
+  "id": "TB-6",
+  "theme": "B_lmic_government",
+  "title": "Southeast Asian regional hospital — mixed-payer with medical tourism",
+  "region": "sea",
+  "profile": "regional_hospital",
+  "description": "Southeast Asian regional public hospital (100k slides/yr). Mixed payer base: local public (low margin) plus international medical-tourism self-pay (high margin). No existing calculator models mixed-payer attribution.",
+  "overrides": {
+    "consult_revenue_per_case": 350,
+    "consults_received_per_year": 1800
+  },
+  "expected": {
+    "npv_min": 500000,
+    "npv_max": 15000000,
+    "payback_year_min": 2,
+    "payback_year_max": 5,
+    "dominant_pillars": ["productivity", "patient_flow", "slide_movement"],
+    "zero_pillars": ["hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "data_monetization"],
+    "comparative": {
+      "dpa_coverage": "missing — US-centric",
+      "sectra_coverage": "missing — no mixed-payer handling",
+      "turoi_only_pillars": ["mixed_payer_attribution"]
+    }
+  },
+  "citations": []
+}

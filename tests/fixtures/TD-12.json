@@ -1,0 +1,24 @@
+{
+  "id": "TD-12",
+  "theme": "D_hub_spoke_chain",
+  "title": "Indian national diagnostic chain — data monetization strategic",
+  "region": "india",
+  "profile": "national_diagnostic_chain",
+  "description": "National-scale Indian chain (SRL / Metropolis / Dr Lal tier: 1.8M slides/yr, 85 pathologist FTE, 120 sites, 1800 runs/week, 18 scanners, 85TB curated dataset). Exercises all diagnostic-lab pillars plus chain-only data_monetization. The data_monetization pillar should be flagged low-confidence by Claude (strategic optionality, not base case) per index.html:2793.",
+  "overrides": {},
+  "expected": {
+    "npv_min": 200000000,
+    "npv_max": 5000000000,
+    "payback_year_min": 1,
+    "payback_year_max": 4,
+    "dominant_pillars": ["commercial_growth", "data_monetization", "hub_spoke_logistics"],
+    "zero_pillars": ["patient_flow", "surgical_impact"],
+    "comparative": {
+      "dpa_coverage": "missing — data monetization is the single red-category emerging line item in DPA",
+      "sectra_coverage": "missing",
+      "turoi_only_pillars": ["data_monetization", "hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale"]
+    },
+    "expected_claude_flags": ["strategic", "data", "low-confidence", "partnership"]
+  },
+  "citations": ["crisil_india_diagnostics_2023"]
+}

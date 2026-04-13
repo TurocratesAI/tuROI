@@ -1,0 +1,23 @@
+{
+  "id": "TC-8",
+  "theme": "C_standalone_diag",
+  "title": "Indian standalone diagnostic lab — LOS-agnostic B2B referral",
+  "region": "india",
+  "profile": "standalone_diagnostic_lab",
+  "description": "Independent single-site Indian diagnostic lab (45k slides/yr, 3 pathologist FTE, B2B referral-driven, ₹65L scanner). No inpatient beds, no OR, no LOS attribution. This is the flagship case for the gap DPA and Sectra both ignore: commercial growth, subspecialty routing, and consult revenue scalability as primary value levers.",
+  "overrides": {},
+  "expected": {
+    "npv_min": 1000000,
+    "npv_max": 80000000,
+    "payback_year_min": 2,
+    "payback_year_max": 5,
+    "dominant_pillars": ["commercial_growth", "subspecialty_routing", "consult_revenue_scale"],
+    "zero_pillars": ["patient_flow", "surgical_impact", "workforce", "data_monetization"],
+    "comparative": {
+      "dpa_coverage": "missing — DPA has no B2B referrer acquisition or subspecialty retention categories (context md line 273)",
+      "sectra_coverage": "missing — Sectra's 'slide retrieval' is internal retrieval not subspecialty routing",
+      "turoi_only_pillars": ["commercial_growth", "subspecialty_routing", "consult_revenue_scale"]
+    }
+  },
+  "citations": ["crisil_india_diagnostics_2023", "ibef_healthcare_2024"]
+}

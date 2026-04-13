@@ -1,0 +1,27 @@
+{
+  "id": "TF-18",
+  "theme": "F_sensitivity",
+  "title": "LatAm academic hospital — currency crisis / hyperinflation",
+  "region": "latam",
+  "profile": "academic_private",
+  "description": "Latin American academic / private hospital operating under hyperinflation (35% annual). Tests whether the inflation_rate knob alone is sufficient or whether the discount_rate should adapt in lockstep. edge_cases.md flags currency-crisis as a documented limitation with no adaptive mechanism.",
+  "overrides": {
+    "inflation_rate": 0.35,
+    "discount_rate": 0.28
+  },
+  "expected": {
+    "npv_min": -50000000,
+    "npv_max": 500000000,
+    "payback_year_min": 1,
+    "payback_year_max": 7,
+    "dominant_pillars": ["productivity", "patient_flow", "slide_movement"],
+    "zero_pillars": ["hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "data_monetization"],
+    "comparative": {
+      "dpa_coverage": "missing — no hyperinflation handling",
+      "sectra_coverage": "missing",
+      "turoi_only_pillars": []
+    },
+    "notes": "Expected: the J-curve and payback become meaningless under hyperinflation because savings and costs inflate in lockstep but the discount rate probably shouldn't track 1:1. This case tests whether the interaction between inflation and discount produces sensible NPV or a degenerate number."
+  },
+  "citations": []
+}

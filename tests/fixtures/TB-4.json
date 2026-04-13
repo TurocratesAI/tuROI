@@ -1,0 +1,23 @@
+{
+  "id": "TB-4",
+  "theme": "B_lmic_government",
+  "title": "Indian government medical college — GeM tender, pooled staffing",
+  "region": "india",
+  "profile": "government_medical_college",
+  "description": "Indian tertiary government teaching hospital (180k slides/yr, 12 pathologist FTE, GeM-portal tender procurement, ₹18L pathologist salary 7th CPC, ₹180/min OR cost, ₹6500/bed-day). Public hospital — LOS savings attribution is ambiguous.",
+  "overrides": {},
+  "expected": {
+    "npv_min": 10000000,
+    "npv_max": 200000000,
+    "payback_year_min": 2,
+    "payback_year_max": 5,
+    "dominant_pillars": ["productivity", "slide_movement", "patient_flow"],
+    "zero_pillars": ["hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "data_monetization"],
+    "comparative": {
+      "dpa_coverage": "wrong-by-default — DPA US salary defaults are 15–20× off; GeM procurement not modeled",
+      "sectra_coverage": "wrong-by-default — Sectra EU/Nordic procurement assumptions; no Indian-tender pricing",
+      "turoi_only_pillars": ["india_govt_procurement", "cpc7_salary_scale"]
+    }
+  },
+  "citations": ["cpc7_india", "ibef_healthcare_2024"]
+}

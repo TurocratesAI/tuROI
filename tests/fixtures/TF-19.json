@@ -1,0 +1,31 @@
+{
+  "id": "TF-19",
+  "theme": "F_sensitivity",
+  "title": "Rural low-volume lab — extreme low volume stress",
+  "region": "india",
+  "profile": "standalone_diagnostic_lab",
+  "description": "Rural Indian standalone lab at the low-volume extreme: 12k slides/yr, 1 pathologist FTE, 1 scanner. edge_cases.md flags extreme scale (<20k slides/yr) as needing explicit handling. Expected: fixed-cost pillars (IMS license, storage, opex) may swamp all savings pillars and NPV goes materially negative, OR all pillars scale down proportionally and NPV is small but positive.",
+  "overrides": {
+    "annual_slide_volume": 12000,
+    "annual_case_volume": 6000,
+    "pathologist_fte": 1,
+    "histotech_fte": 2,
+    "b2b_referrers_current": 10,
+    "new_referrers_per_year_baseline": 0,
+    "new_referrers_per_year_digital": 1
+  },
+  "expected": {
+    "npv_min": -15000000,
+    "npv_max": 10000000,
+    "payback_year_min": 3,
+    "payback_year_max": 7,
+    "dominant_pillars": ["productivity", "commercial_growth", "subspecialty_routing"],
+    "zero_pillars": ["patient_flow", "surgical_impact", "data_monetization"],
+    "comparative": {
+      "dpa_coverage": "partial — DPA assumes enough volume to spread fixed costs",
+      "sectra_coverage": "partial",
+      "turoi_only_pillars": []
+    }
+  },
+  "citations": []
+}

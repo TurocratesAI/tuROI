@@ -1,0 +1,23 @@
+{
+  "id": "TD-11",
+  "theme": "D_hub_spoke_chain",
+  "title": "Indian hyperlocal diagnostic chain — hub-and-spoke logistics",
+  "region": "india",
+  "profile": "hyperlocal_diagnostic_chain",
+  "description": "Indian regional diagnostic chain (18 sites: 4 central + 14 spoke, 210 inter-site courier runs/week @ ₹1800/run, 22% subspecialty out-referral with 72% retainable via digital signout). Core test case for hub_spoke_logistics and subspecialty_routing pillars, both of which have no analogue in DPA or Sectra.",
+  "overrides": {},
+  "expected": {
+    "npv_min": 30000000,
+    "npv_max": 600000000,
+    "payback_year_min": 1,
+    "payback_year_max": 4,
+    "dominant_pillars": ["commercial_growth", "subspecialty_routing", "hub_spoke_logistics"],
+    "zero_pillars": ["patient_flow", "surgical_impact", "data_monetization"],
+    "comparative": {
+      "dpa_coverage": "missing — no hub-spoke logistics at all",
+      "sectra_coverage": "partial — 'slide retrieval elimination' is the closest analogue but models internal retrieval, not inter-site transport",
+      "turoi_only_pillars": ["hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale"]
+    }
+  },
+  "citations": ["vodovnik2018", "labcorp_10k_2023"]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "TB-5",
+  "theme": "B_lmic_government",
+  "title": "African teaching hospital — donor-funded capex, slow ramp",
+  "region": "africa",
+  "profile": "teaching_hospital",
+  "description": "Sub-Saharan African teaching hospital (60k slides/yr, $55k pathologist, donor-funded 1 scanner @ $120k, reduced ramp 0.20/0.55/0.95 encoded in profile). Capex provenance (donor grant vs. institutional purchase) is a flagged edge case with no wizard affordance.",
+  "overrides": {},
+  "expected": {
+    "npv_min": -500000,
+    "npv_max": 3000000,
+    "payback_year_min": 3,
+    "payback_year_max": 7,
+    "dominant_pillars": ["productivity", "slide_movement", "patient_flow"],
+    "zero_pillars": ["hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "data_monetization"],
+    "comparative": {
+      "dpa_coverage": "missing — no LMIC region at all",
+      "sectra_coverage": "missing — no LMIC region at all",
+      "turoi_only_pillars": ["lmic_ramp_adjustment", "donor_funded_capex_flag"]
+    },
+    "expected_claude_flags": ["donor", "refurbished", "grant"]
+  },
+  "citations": ["vodovnik2024"]
+}

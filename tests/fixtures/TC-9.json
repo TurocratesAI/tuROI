@@ -1,0 +1,23 @@
+{
+  "id": "TC-9",
+  "theme": "C_standalone_diag",
+  "title": "US standalone diagnostic lab — Medicare fee-schedule exposure",
+  "region": "us",
+  "profile": "standalone_diagnostic_lab",
+  "description": "Independent US diagnostic lab (85k slides/yr, 4 pathologist FTE). Medicare fee-schedule exposure on technical + professional components; B2B referral from local specialist practices. Shares the LOS-agnostic shape with TC-8 under US cost structure.",
+  "overrides": {},
+  "expected": {
+    "npv_min": 500000,
+    "npv_max": 20000000,
+    "payback_year_min": 2,
+    "payback_year_max": 5,
+    "dominant_pillars": ["commercial_growth", "subspecialty_routing", "consult_revenue_scale"],
+    "zero_pillars": ["patient_flow", "surgical_impact", "data_monetization"],
+    "comparative": {
+      "dpa_coverage": "missing — no standalone-lab profile",
+      "sectra_coverage": "missing — no standalone-lab profile",
+      "turoi_only_pillars": ["commercial_growth", "subspecialty_routing", "consult_revenue_scale"]
+    }
+  },
+  "citations": ["mgma_compensation_2024"]
+}

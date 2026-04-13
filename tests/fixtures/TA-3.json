@@ -1,0 +1,24 @@
+{
+  "id": "TA-3",
+  "theme": "A_baseline",
+  "title": "UK NHS Trust — block-contract tariff, attribution stress",
+  "region": "uk",
+  "profile": "nhs_trust",
+  "description": "UK NHS Trust pathology (180k slides/yr, £105k consultant salary). NHS block-contract tariff means LOS savings do NOT flow back to the pathology department P&L. Tests the attribution framework: patient_flow should either zero out or be surfaced as hospital-captured, not departmental.",
+  "overrides": {},
+  "expected": {
+    "npv_min": 100000,
+    "npv_max": 5000000,
+    "payback_year_min": 2,
+    "payback_year_max": 5,
+    "dominant_pillars": ["productivity", "surgical_impact", "slide_movement"],
+    "zero_pillars": ["hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "data_monetization"],
+    "comparative": {
+      "dpa_coverage": "partial — no attribution-mode concept",
+      "sectra_coverage": "partial — EU-anchored but no block-contract attribution",
+      "turoi_only_pillars": ["attribution_framework"]
+    },
+    "notes": "patient_flow pillar is the attribution stress target — expected to be suppressed or explicitly marked hospital-captured under NHS block contracting; see Finding F-01"
+  },
+  "citations": ["nhs_afc_2024", "vodovnik2024"]
+}

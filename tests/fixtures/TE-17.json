@@ -1,0 +1,28 @@
+{
+  "id": "TE-17",
+  "theme": "E_gap_finding",
+  "title": "Refurbished / grant-funded scanner — capex provenance gap",
+  "region": "africa",
+  "profile": "teaching_hospital",
+  "description": "African teaching hospital with 1 scanner acquired at 40% of list price (refurbished or donor-funded) with a 5-year service contract bundled in. Currently the calculator accepts the lowered scanner_cost directly — which is correct arithmetically — but there's no provenance tracking on whether the number is real or a dream. No warranty/AMC structure modeled, no end-of-life replacement scheduled.",
+  "overrides": {
+    "scanner_cost": 48000,
+    "implementation_cost": 80000
+  },
+  "expected": {
+    "npv_min": -500000,
+    "npv_max": 5000000,
+    "payback_year_min": 2,
+    "payback_year_max": 7,
+    "dominant_pillars": ["productivity", "slide_movement", "patient_flow"],
+    "zero_pillars": ["hub_spoke_logistics", "subspecialty_routing", "commercial_growth", "consult_revenue_scale", "data_monetization"],
+    "comparative": {
+      "dpa_coverage": "missing — no capex-mode enum",
+      "sectra_coverage": "missing",
+      "turoi_only_pillars": []
+    },
+    "notes": "EXPECTED OUTCOME: calculator runs with a much better NPV because capex is 40% of normal. The finding is that there's no data-hygiene affordance for 'is this scanner price real or aspirational?' and no service-contract structure. Outcome: capex-mode enum (new / refurbished / grant / subscription) with each producing different warranty + replacement-schedule lifecycle costs."
+  },
+  "gap_finding": true,
+  "citations": []
+}

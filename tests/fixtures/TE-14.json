@@ -1,0 +1,37 @@
+{
+  "id": "TE-14",
+  "theme": "E_gap_finding",
+  "title": "Shared scanner across 3 independent community labs — NOT MODELED",
+  "region": "india",
+  "profile": "hyperlocal_diagnostic_chain",
+  "description": "User's explicit example: three independent single-site labs sharing one scanner. Turoi has no multi-org pooling model. Closest workaround is to pretend it's a 3-site chain with no central HQ — that gives a lower-bound estimate but does NOT capture the per-institution capex saving from pooling, nor the inter-org IP/data governance friction. Expected outcome: the calculator produces a number that is a rough proxy; the finding is a feature request for a 'shared_infrastructure' section.",
+  "overrides": {
+    "annual_slide_volume": 135000,
+    "annual_case_volume": 68000,
+    "pathologist_fte": 9,
+    "histotech_fte": 15,
+    "scanner_count": 1,
+    "sites_count": 3,
+    "central_lab_sites": 0,
+    "spoke_sites": 3,
+    "inter_site_runs_per_week": 45,
+    "consults_received_per_year": 0,
+    "b2b_referrers_current": 90
+  },
+  "expected": {
+    "npv_min": -50000000,
+    "npv_max": 500000000,
+    "payback_year_min": 1,
+    "payback_year_max": 7,
+    "dominant_pillars": ["commercial_growth", "hub_spoke_logistics", "subspecialty_routing"],
+    "zero_pillars": ["patient_flow", "surgical_impact", "data_monetization"],
+    "comparative": {
+      "dpa_coverage": "missing — multi-org pooling not modeled",
+      "sectra_coverage": "missing",
+      "turoi_only_pillars": []
+    },
+    "notes": "EXPECTED OUTCOME: Case runs and produces a number. The finding is that the number is a synthetic-chain proxy that: (a) undercounts because it can't reflect the per-org capex pooling (each org saves 2/3 of scanner cost vs buying solo), (b) overcounts commercial_growth because it assumes one legal-entity margin stack, (c) has no mechanism for inter-org governance friction. Outcome: feature request for shared_infrastructure section in WIZARD_SECTIONS."
+  },
+  "gap_finding": true,
+  "citations": []
+}
