@@ -1557,6 +1557,7 @@ table.ledger .conf-low    { color: var(--spine); }
   <!-- SCREEN: DASHBOARD -->
   <section class="screen" id="screen-dashboard">
     <div id="dashboard-preliminary-banner"></div>
+    <div id="dashboard-feasibility-banner"></div>
     <div style="margin-bottom:12px;"><button class="ghost small" data-goto="review">&larr; Back to review</button> <button class="ghost small" data-goto="welcome">&larr; Start over</button></div>
     <div class="dashboard-head">
       <div>
@@ -1574,6 +1575,8 @@ table.ledger .conf-low    { color: var(--spine); }
           <option value="board">Board of Directors</option>
           <option value="grant_committee">Grant Committee</option>
         </select>
+        <label for="advanced-pillars-toggle" style="margin: 0 8px 0 16px; font-size: 12px;" title="Include low-confidence pillars: dataset commercialization and US CPT reimbursement. Off by default because these depend on contractor pricing or niche transactional revenue.">Advanced pillars</label>
+        <input type="checkbox" id="advanced-pillars-toggle" style="vertical-align: middle;">
       </div>
     </div>
 
@@ -1611,6 +1614,25 @@ table.ledger .conf-low    { color: var(--spine); }
       <h4>Year-by-year projection</h4>
       <div id="year-table-wrap"></div>
     </div>
+
+    <details class="chart-panel" id="methodology-callout" style="margin-bottom: 24px;">
+      <summary style="cursor:pointer; font-weight:600;">How Turoi's methodology extends the DPA reference calculator</summary>
+      <div style="padding:12px 0 4px; font-size:13px; line-height:1.55;">
+        <p style="margin:0 0 10px 0;">The Digital Pathology Association publishes a popular ROI reference calculator. Turoi covers every DPA input and adds the following rigor:</p>
+        <ul style="margin:0 0 10px 18px; padding:0;">
+          <li><strong>Monte Carlo simulation</strong> on every pillar — you get a 5th–95th percentile confidence interval, not a point estimate.</li>
+          <li><strong>NPV + IRR + discounting</strong> — DPA reports nominal multi-year sums; Turoi discounts future cash flows at your organization's actual cost of capital.</li>
+          <li><strong>Regional defaults</strong> for India, US, and UK across 12+ institutional sub-profiles, including government medical colleges, corporate hospitals, and reference labs.</li>
+          <li><strong>Citation ledger</strong> — every default has a source URL, confidence level (high/medium/low), and reasoning. Filter, export to CSV/BibTeX, or edit inline.</li>
+          <li><strong>Tornado sensitivity analysis</strong> — ±20% perturbation on every input, ranked by NPV impact.</li>
+          <li><strong>Profile-aware visibility</strong> — wizard sections appear only when relevant to your profile type and region.</li>
+          <li><strong>Scanner capacity feasibility check</strong> — warns if projected slide volume exceeds realistic scanner throughput (DPA silently accepts infeasible projections).</li>
+          <li><strong>Telepathology revenue pillar</strong> — models client ramp, volume compounding, and fee escalation for labs monetizing remote reporting (absent from DPA).</li>
+          <li><strong>AI-analyst advisor</strong> — interactive what-if chat that re-runs the projection live.</li>
+        </ul>
+        <p style="margin:10px 0 0 0; font-size:12px; color:var(--muted);">Every field listed in the DPA calculator is tracked in Turoi. Shared inputs use the same definitions; Turoi adds on-prem/cloud storage split, workstation breakdown, scanner capacity, legal tripartite breakdown, and seven DPA pillars (ROSE, QC, IT architecture, education, collaboration, commercialization, US CPT reimbursement).</p>
+      </div>
+    </details>
 
     <div class="advisor-panel">
       <h3>Advisor</h3>
@@ -1740,15 +1762,187 @@ const HOSPITAL_SECTIONS = [
   "clinical_ops", "consults", "equipment", "staffing_changes", "archive",
   "material_loss", "legal", "projection", "frozen_section", "or_time",
   "patient_los", "burnout", "real_estate", "revenue_strategic",
+  // DPA-parity additions
+  "rose_workflow", "qc_workflow", "it_architecture",
+  "education_conferencing", "case_review_collab", "us_cpt_reimbursement",
 ];
 const DIAG_LAB_SECTIONS = [
   "clinical_ops", "consults", "equipment", "staffing_changes", "archive",
   "material_loss", "legal", "projection", "hub_spoke", "subspecialty_routing",
   "commercial_growth", "consult_revenue", "telepathology", "revenue_strategic",
+  // DPA-parity additions
+  "qc_workflow", "it_architecture", "commercialization", "us_cpt_reimbursement",
 ];
 const DIAG_CHAIN_SECTIONS = [
   ...DIAG_LAB_SECTIONS, "data_monetization",
 ];
+
+/* DPA-parity regional defaults — applied to every sub-profile via seedLedgerFromProfile().
+   Sub-profile defaults override these. All monetary values in local currency.
+*/
+const DPA_PARITY_DEFAULTS = {
+  india: {
+    days_per_week_operating: 6, weeks_per_year_operating: 50,
+    tech_hours_per_shift: 8, admin_hours_per_shift: 8,
+    admin_fte_count: 4, admin_fte_salary: 360000,
+    tech_assembly_time_min_per_case: 5, tech_delivery_hours_per_day: 2,
+    courier_delivery_hours_per_week: 20, courier_hourly_rate: 200,
+    scan_time_per_slide_min: 1.5, scan_operational_hours_per_day: 16,
+    scanner_operator_count: 1, scanner_operator_salary: 480000,
+    scanner_downtime_hours_per_week: 4,
+    monitor_cost_per_unit: 120000, input_device_cost_per_unit: 25000,
+    workstation_upgrade_cost_per_unit: 50000,
+    storage_wsi_file_size_gb: 2.5,
+    storage_onprem_pct: 0.40, storage_onprem_cost_per_tb_month: 800,
+    storage_cloud_pct: 0.60, storage_cloud_cost_per_tb_month: 2000,
+    retrieval_cost_per_request: 400, archival_cost_per_case: 80,
+    retrieval_decrease_pct_digital: 0.75,
+    tech_archive_hours_per_week: 10, tech_retrieve_hours_per_week: 8,
+    admin_archive_hours_per_week: 6, admin_retrieve_hours_per_week: 6,
+    shipments_archived_per_week: 8, shipments_retrieved_per_week: 12,
+    legal_internal_cost_per_case: 150000, legal_professional_cost_per_case: 500000,
+    legal_technical_cost_per_case: 250000, legal_cases_avoided_pct_digital: 0.20,
+    rose_enabled: "no", rose_procedures_per_day: 0,
+    rose_remote_device_count: 0, rose_device_cost: 4500000,
+    rose_courier_cost_annual: 0,
+    rose_pathologist_productivity_gain_pct: 0.25, rose_tech_productivity_gain_pct: 0.15,
+    rose_pathologist_fte_dedicated_pct: 0.10,
+    qc_time_per_slide_min_current: 1.2, qc_time_reduction_pct_digital: 0.40,
+    qc_fte_salary: 800000, qc_coverage_pct_slides: 0.10,
+    lis_integration_cost_one_time: 800000,
+    it_fte_count_dedicated_dp: 0.5, it_fte_salary: 900000,
+    service_contract_annual_per_scanner: 400000, scanner_vendor_count: 1,
+    conference_cases_per_year: 200,
+    conference_admin_prep_hours_per_week: 6, conference_path_prep_hours_per_week: 10,
+    educational_recuts_per_year: 300, education_prep_reduction_pct_digital: 0.50,
+    team_review_meetings_per_week: 2, cases_per_review_meeting: 8,
+    review_admin_prep_min_per_case: 10, review_path_prep_min_per_case: 15,
+    review_prep_reduction_pct_digital: 0.40,
+    commercialization_slides_per_year: 0, commercialization_revenue_per_slide: 300,
+  },
+  us: {
+    days_per_week_operating: 5, weeks_per_year_operating: 50,
+    tech_hours_per_shift: 8, admin_hours_per_shift: 8,
+    admin_fte_count: 3, admin_fte_salary: 55000,
+    tech_assembly_time_min_per_case: 4, tech_delivery_hours_per_day: 1.5,
+    courier_delivery_hours_per_week: 15, courier_hourly_rate: 22,
+    scan_time_per_slide_min: 1.2, scan_operational_hours_per_day: 14,
+    scanner_operator_count: 1, scanner_operator_salary: 65000,
+    scanner_downtime_hours_per_week: 3,
+    monitor_cost_per_unit: 1800, input_device_cost_per_unit: 350,
+    workstation_upgrade_cost_per_unit: 2500,
+    storage_wsi_file_size_gb: 2.5,
+    storage_onprem_pct: 0.30, storage_onprem_cost_per_tb_month: 15,
+    storage_cloud_pct: 0.70, storage_cloud_cost_per_tb_month: 25,
+    retrieval_cost_per_request: 25, archival_cost_per_case: 6,
+    retrieval_decrease_pct_digital: 0.75,
+    tech_archive_hours_per_week: 12, tech_retrieve_hours_per_week: 10,
+    admin_archive_hours_per_week: 8, admin_retrieve_hours_per_week: 8,
+    shipments_archived_per_week: 10, shipments_retrieved_per_week: 15,
+    legal_internal_cost_per_case: 8000, legal_professional_cost_per_case: 28000,
+    legal_technical_cost_per_case: 12000, legal_cases_avoided_pct_digital: 0.20,
+    rose_enabled: "no", rose_procedures_per_day: 0,
+    rose_remote_device_count: 0, rose_device_cost: 85000,
+    rose_courier_cost_annual: 0,
+    rose_pathologist_productivity_gain_pct: 0.25, rose_tech_productivity_gain_pct: 0.15,
+    rose_pathologist_fte_dedicated_pct: 0.10,
+    qc_time_per_slide_min_current: 1.5, qc_time_reduction_pct_digital: 0.40,
+    qc_fte_salary: 110000, qc_coverage_pct_slides: 0.10,
+    lis_integration_cost_one_time: 85000,
+    it_fte_count_dedicated_dp: 0.75, it_fte_salary: 125000,
+    service_contract_annual_per_scanner: 18000, scanner_vendor_count: 1,
+    conference_cases_per_year: 500,
+    conference_admin_prep_hours_per_week: 8, conference_path_prep_hours_per_week: 12,
+    educational_recuts_per_year: 600, education_prep_reduction_pct_digital: 0.50,
+    team_review_meetings_per_week: 3, cases_per_review_meeting: 8,
+    review_admin_prep_min_per_case: 15, review_path_prep_min_per_case: 20,
+    review_prep_reduction_pct_digital: 0.40,
+    commercialization_slides_per_year: 0, commercialization_revenue_per_slide: 15,
+    ihc_manual_tests_per_year: 4000, ihc_computer_assisted_transition_pct: 0.30,
+    cpt_88361_reimbursement_per_test: 45,
+    wsi_scanned_case_volume_per_year: 20000,
+    cpt_addon_capture_pct: 0.05, cpt_addon_avg_reimbursement_per_case: 25,
+    cpt_realization_pct: 0.40,
+  },
+  uk: {
+    days_per_week_operating: 5, weeks_per_year_operating: 48,
+    tech_hours_per_shift: 7.5, admin_hours_per_shift: 7.5,
+    admin_fte_count: 3, admin_fte_salary: 28000,
+    tech_assembly_time_min_per_case: 5, tech_delivery_hours_per_day: 2,
+    courier_delivery_hours_per_week: 18, courier_hourly_rate: 16,
+    scan_time_per_slide_min: 1.5, scan_operational_hours_per_day: 12,
+    scanner_operator_count: 1, scanner_operator_salary: 32000,
+    scanner_downtime_hours_per_week: 4,
+    monitor_cost_per_unit: 1400, input_device_cost_per_unit: 250,
+    workstation_upgrade_cost_per_unit: 1800,
+    storage_wsi_file_size_gb: 2.5,
+    storage_onprem_pct: 0.50, storage_onprem_cost_per_tb_month: 12,
+    storage_cloud_pct: 0.50, storage_cloud_cost_per_tb_month: 22,
+    retrieval_cost_per_request: 18, archival_cost_per_case: 4,
+    retrieval_decrease_pct_digital: 0.75,
+    tech_archive_hours_per_week: 10, tech_retrieve_hours_per_week: 8,
+    admin_archive_hours_per_week: 6, admin_retrieve_hours_per_week: 6,
+    shipments_archived_per_week: 8, shipments_retrieved_per_week: 12,
+    legal_internal_cost_per_case: 6000, legal_professional_cost_per_case: 22000,
+    legal_technical_cost_per_case: 9000, legal_cases_avoided_pct_digital: 0.20,
+    rose_enabled: "no", rose_procedures_per_day: 0,
+    rose_remote_device_count: 0, rose_device_cost: 70000,
+    rose_courier_cost_annual: 0,
+    rose_pathologist_productivity_gain_pct: 0.25, rose_tech_productivity_gain_pct: 0.15,
+    rose_pathologist_fte_dedicated_pct: 0.10,
+    qc_time_per_slide_min_current: 1.4, qc_time_reduction_pct_digital: 0.40,
+    qc_fte_salary: 45000, qc_coverage_pct_slides: 0.10,
+    lis_integration_cost_one_time: 60000,
+    it_fte_count_dedicated_dp: 0.5, it_fte_salary: 55000,
+    service_contract_annual_per_scanner: 14000, scanner_vendor_count: 1,
+    conference_cases_per_year: 350,
+    conference_admin_prep_hours_per_week: 6, conference_path_prep_hours_per_week: 10,
+    educational_recuts_per_year: 400, education_prep_reduction_pct_digital: 0.50,
+    team_review_meetings_per_week: 2, cases_per_review_meeting: 7,
+    review_admin_prep_min_per_case: 12, review_path_prep_min_per_case: 18,
+    review_prep_reduction_pct_digital: 0.40,
+    commercialization_slides_per_year: 0, commercialization_revenue_per_slide: 12,
+  },
+};
+
+const DPA_PARITY_BASIS = {
+  india: {
+    days_per_week_operating: b("Standard diagnostic lab operating schedule in India", "6-day week standard; 5 in corporate-style labs. DPA default.", "high"),
+    weeks_per_year_operating: b("Net operating weeks after holidays", "52 weeks minus ~2 weeks of closures/maintenance.", "high"),
+    admin_fte_salary: b("Indian lab coordinator / admin compensation survey", "₹25-35k/month for experienced lab administrators.", "medium"),
+    qc_fte_salary: b("Senior pathologist / technical staff QC role", "QC typically a ₹60-80k/month senior histopath role.", "medium"),
+    it_fte_salary: b("Indian IT support FTE compensation", "Mid-level IT support engineer in healthcare.", "medium"),
+    service_contract_annual_per_scanner: b("Vendor AMC quotes for WSI scanners in India", "Typical 4-7% of scanner capital cost per year.", "medium"),
+    storage_onprem_cost_per_tb_month: b("Indian on-prem NAS TCO per TB", "Hardware + power + management + cooling.", "medium"),
+    storage_cloud_cost_per_tb_month: b("Indian cloud provider pricing (AWS Mumbai, Azure India)", "Warm-tier blob storage after compression.", "medium"),
+    retrieval_decrease_pct_digital: b("DPA calculator default + Ardon 2023 logistics", "Digital eliminates most physical retrieval; 75% reduction typical.", "medium", "ardon2023_logistics"),
+    legal_internal_cost_per_case: b("Hospital in-house counsel billing estimate", "Includes record pull, coordination, review hours.", "low"),
+    legal_professional_cost_per_case: b("External counsel fee estimates for medicolegal cases in India", "Typical ₹5-10L in senior counsel fees per complex case.", "low"),
+    legal_technical_cost_per_case: b("Expert witness + case preparation costs", "Pathology expert witness engagement fees in Indian courts.", "low"),
+    rose_pathologist_productivity_gain_pct: b("CAP cytopathology workflow literature", "Published ROSE time savings from remote assessment.", "medium"),
+    qc_time_reduction_pct_digital: b("ASCP QC benchmarking (digital vs glass)", "Digital QC is faster due to batch review and keyboard navigation.", "medium"),
+    education_prep_reduction_pct_digital: b("Academic pathology survey data on tumor board prep", "Digital eliminates slide pulling and tray assembly.", "medium"),
+    review_prep_reduction_pct_digital: b("Published tumor board workflow time studies", "Digital enables parallel review and reduces physical handling.", "medium"),
+    cpt_realization_pct: null,
+  },
+  us: {
+    cpt_88361_reimbursement_per_test: b("CMS Physician Fee Schedule (2024)", "Approximate national average for computer-assisted IHC quantification. Verify with CMS PFS lookup tool for your locality.", "medium"),
+    cpt_addon_capture_pct: b("XIFIN 2024 digital pathology billing study", "Contractor-priced; realized capture depends on MAC policy.", "low"),
+    cpt_addon_avg_reimbursement_per_case: b("G2 Intelligence / XIFIN pricing commentary", "Aggregate estimate across 0751T-0763T; individual codes contractor-priced.", "low"),
+    cpt_realization_pct: b("CAP 2024 MPFS Final Rule + APS Medical Billing realization data", "Average realization for contractor-priced Category III codes is typically 30-50% of listed rates.", "low"),
+    storage_cloud_cost_per_tb_month: b("AWS S3 / Azure Blob / GCS warm-tier pricing 2024", "Blended rate including retrieval, replication, and modest egress.", "high"),
+    storage_onprem_cost_per_tb_month: b("Enterprise NAS TCO studies", "Hardware amortization + management + power per TB/month.", "medium"),
+    legal_professional_cost_per_case: b("AMA / CAP medicolegal cost estimates", "Typical external counsel engagement per medicolegal case.", "low"),
+    legal_technical_cost_per_case: b("Expert witness + case preparation for US medicolegal", "Pathology expert witness engagement fees in US litigation.", "low"),
+  },
+  uk: {
+    service_contract_annual_per_scanner: b("NHS procurement framework for WSI maintenance", "Standard AMC 4-6% of capital value.", "medium"),
+    storage_onprem_cost_per_tb_month: b("NHS data centre cost per TB/month", "On-premise clinical storage TCO.", "medium"),
+    storage_cloud_cost_per_tb_month: b("UK cloud provider pricing (AWS London, Azure UK)", "Warm-tier blob storage after compression.", "medium"),
+    qc_fte_salary: b("NHS Agenda for Change Band 7-8a", "Senior biomedical scientist / pathologist QC role.", "high"),
+    it_fte_salary: b("NHS Agenda for Change Band 6 IT support", "Clinical IT support engineer compensation.", "high"),
+  },
+};
 
 const REGIONS = {
 
@@ -3291,6 +3485,7 @@ const state = {
   visible_sections: [],      // section ids visible for current profile
   chat_history: [],          // what-if chat messages
   dashboard_insight: null,   // cached dashboardInsight output
+  show_advanced_pillars: false, // gate low-confidence pillars (commercialization, us_cpt_reimbursement)
 };
 
 /* ----- ledger entry shape -----
@@ -3560,8 +3755,11 @@ function seedLedgerFromProfile(regionKey, subProfileKey) {
   state.region = regionKey;
   state.sub_profile = subProfileKey;
   state.visible_sections = profile.visible_sections.slice();
-  const defaults = profile.defaults || {};
-  const basis = profile.basis || {};
+  // Merge DPA-parity regional defaults first (generic baseline), then sub-profile wins.
+  const dpaParity = (typeof DPA_PARITY_DEFAULTS !== "undefined" && DPA_PARITY_DEFAULTS[regionKey]) || {};
+  const dpaBasis  = (typeof DPA_PARITY_BASIS !== "undefined" && DPA_PARITY_BASIS[regionKey]) || {};
+  const defaults = { ...dpaParity, ...(profile.defaults || {}) };
+  const basis    = { ...dpaBasis, ...(profile.basis || {}) };
   Object.keys(defaults).forEach(id => {
     ledger.setDefault(
       id,
@@ -3716,6 +3914,92 @@ const FIELD_LABELS = {
   telepatho_path_cost_per_case: "Pathologist cost per telepathology case",
   telepatho_platform_cost_annual: "Telepathology platform cost (annual)",
   telepatho_support_fte_cost_annual: "Telepathology support FTE cost (annual)",
+  // Clinical operations expansion (DPA parity)
+  days_per_week_operating: "Lab operating days per week",
+  weeks_per_year_operating: "Lab operating weeks per year",
+  tech_hours_per_shift: "Technologist hours per shift",
+  admin_hours_per_shift: "Admin hours per shift",
+  admin_fte_count: "Admin FTE count",
+  admin_fte_salary: "Admin salary (annual)",
+  // Case assembly & delivery expansion
+  tech_assembly_time_min_per_case: "Tech assembly time per case (min)",
+  tech_delivery_hours_per_day: "Tech delivery hours per day",
+  courier_delivery_hours_per_week: "Courier delivery hours per week",
+  courier_hourly_rate: "Courier hourly rate",
+  // Scanner capacity block
+  scan_time_per_slide_min: "Scan time per slide (min)",
+  scan_operational_hours_per_day: "Scan operational hours per day",
+  scanner_operator_count: "Scanner operator count",
+  scanner_operator_salary: "Scanner operator salary (annual)",
+  scanner_downtime_hours_per_week: "Scanner downtime (hours/week)",
+  // Workstation breakdown
+  monitor_cost_per_unit: "High-definition monitor cost (per unit)",
+  input_device_cost_per_unit: "Input device cost (per unit)",
+  workstation_upgrade_cost_per_unit: "Workstation upgrade cost (per unit)",
+  // Storage on-prem / cloud split
+  storage_wsi_file_size_gb: "Avg WSI file size (GB)",
+  storage_onprem_pct: "Storage on-premise (%)",
+  storage_onprem_cost_per_tb_month: "On-prem storage cost per TB/month",
+  storage_cloud_pct: "Storage cloud (%)",
+  storage_cloud_cost_per_tb_month: "Cloud storage cost per TB/month",
+  // Archive & retrieval expansion
+  retrieval_cost_per_request: "Retrieval cost per request",
+  archival_cost_per_case: "Archival cost per case",
+  retrieval_decrease_pct_digital: "Retrieval decrease with digital (%)",
+  tech_archive_hours_per_week: "Tech archive time (hours/week)",
+  tech_retrieve_hours_per_week: "Tech retrieval time (hours/week)",
+  admin_archive_hours_per_week: "Admin archive time (hours/week)",
+  admin_retrieve_hours_per_week: "Admin retrieval time (hours/week)",
+  shipments_archived_per_week: "Archived shipments per week",
+  shipments_retrieved_per_week: "Retrieved shipments per week",
+  // Legal tripartite breakdown
+  legal_internal_cost_per_case: "Internal legal cost per case",
+  legal_professional_cost_per_case: "Professional legal cost per case",
+  legal_technical_cost_per_case: "Technical legal cost per case",
+  legal_cases_avoided_pct_digital: "Legal cases avoided with digital (%)",
+  // ROSE workflow
+  rose_enabled: "ROSE procedures performed",
+  rose_procedures_per_day: "ROSE procedures per day",
+  rose_remote_device_count: "Remote devices (scanners for ROSE)",
+  rose_device_cost: "ROSE device cost (per unit)",
+  rose_courier_cost_annual: "ROSE courier cost (annual)",
+  rose_pathologist_productivity_gain_pct: "ROSE pathologist productivity gain (%)",
+  rose_tech_productivity_gain_pct: "ROSE technologist productivity gain (%)",
+  rose_pathologist_fte_dedicated_pct: "Pathologist FTE % dedicated to ROSE",
+  // QC workflow
+  qc_time_per_slide_min_current: "QC time per slide, current (min)",
+  qc_time_reduction_pct_digital: "QC time reduction with digital (%)",
+  qc_fte_salary: "QC personnel salary (annual)",
+  qc_coverage_pct_slides: "QC coverage (% of slides)",
+  // IT architecture (cost pillar)
+  lis_integration_cost_one_time: "LIS integration cost (one-time)",
+  it_fte_count_dedicated_dp: "IT FTE dedicated to digital pathology",
+  it_fte_salary: "IT FTE salary (annual)",
+  service_contract_annual_per_scanner: "Service contract per scanner (annual)",
+  scanner_vendor_count: "Number of scanner vendors",
+  // Education & conferencing
+  conference_cases_per_year: "Conference cases per year",
+  conference_admin_prep_hours_per_week: "Admin conference prep (hours/week)",
+  conference_path_prep_hours_per_week: "Pathologist conference prep (hours/week)",
+  educational_recuts_per_year: "Educational recuts per year",
+  education_prep_reduction_pct_digital: "Education prep reduction with digital (%)",
+  // Case review & collaboration
+  team_review_meetings_per_week: "Team review meetings per week",
+  cases_per_review_meeting: "Cases per review meeting",
+  review_admin_prep_min_per_case: "Admin review prep per case (min)",
+  review_path_prep_min_per_case: "Pathologist review prep per case (min)",
+  review_prep_reduction_pct_digital: "Review prep reduction with digital (%)",
+  // Commercialization
+  commercialization_slides_per_year: "Slides for commercialization per year",
+  commercialization_revenue_per_slide: "Revenue per commercialized slide",
+  // US CPT reimbursement
+  ihc_manual_tests_per_year: "Manual-quantified IHC tests per year",
+  ihc_computer_assisted_transition_pct: "Transition to computer-assisted IHC (%)",
+  cpt_88361_reimbursement_per_test: "CPT 88361 reimbursement per test",
+  wsi_scanned_case_volume_per_year: "WSI scanned cases per year",
+  cpt_addon_capture_pct: "Digital add-on CPT capture rate (%)",
+  cpt_addon_avg_reimbursement_per_case: "Avg digital add-on reimbursement per case",
+  cpt_realization_pct: "CPT realization rate (%)",
 };
 
 const FIELD_DOMAINS = {
@@ -3760,6 +4044,64 @@ const FIELD_DOMAINS = {
   telepatho_path_compensation: "telepathology", telepatho_pathologist_pct_dedicated: "telepathology",
   telepatho_path_cost_per_case: "telepathology",
   telepatho_platform_cost_annual: "telepathology", telepatho_support_fte_cost_annual: "telepathology",
+  // Clinical operations expansion
+  days_per_week_operating: "clinical_ops", weeks_per_year_operating: "clinical_ops",
+  tech_hours_per_shift: "staffing", admin_hours_per_shift: "staffing",
+  admin_fte_count: "staffing", admin_fte_salary: "staffing",
+  // Case assembly & delivery expansion
+  tech_assembly_time_min_per_case: "slide_movement", tech_delivery_hours_per_day: "slide_movement",
+  courier_delivery_hours_per_week: "slide_movement", courier_hourly_rate: "slide_movement",
+  // Scanner capacity
+  scan_time_per_slide_min: "capex", scan_operational_hours_per_day: "capex",
+  scanner_operator_count: "staffing", scanner_operator_salary: "staffing",
+  scanner_downtime_hours_per_week: "capex",
+  // Workstation breakdown
+  monitor_cost_per_unit: "capex", input_device_cost_per_unit: "capex",
+  workstation_upgrade_cost_per_unit: "capex",
+  // Storage split
+  storage_wsi_file_size_gb: "infrastructure", storage_onprem_pct: "infrastructure",
+  storage_onprem_cost_per_tb_month: "infrastructure", storage_cloud_pct: "infrastructure",
+  storage_cloud_cost_per_tb_month: "infrastructure",
+  // Archive & retrieval expansion
+  retrieval_cost_per_request: "slide_movement", archival_cost_per_case: "slide_movement",
+  retrieval_decrease_pct_digital: "slide_movement",
+  tech_archive_hours_per_week: "slide_movement", tech_retrieve_hours_per_week: "slide_movement",
+  admin_archive_hours_per_week: "slide_movement", admin_retrieve_hours_per_week: "slide_movement",
+  shipments_archived_per_week: "slide_movement", shipments_retrieved_per_week: "slide_movement",
+  // Legal tripartite
+  legal_internal_cost_per_case: "risk", legal_professional_cost_per_case: "risk",
+  legal_technical_cost_per_case: "risk", legal_cases_avoided_pct_digital: "risk",
+  // ROSE
+  rose_enabled: "rose_workflow", rose_procedures_per_day: "rose_workflow",
+  rose_remote_device_count: "rose_workflow", rose_device_cost: "rose_workflow",
+  rose_courier_cost_annual: "rose_workflow",
+  rose_pathologist_productivity_gain_pct: "rose_workflow",
+  rose_tech_productivity_gain_pct: "rose_workflow",
+  rose_pathologist_fte_dedicated_pct: "rose_workflow",
+  // QC
+  qc_time_per_slide_min_current: "qc_workflow", qc_time_reduction_pct_digital: "qc_workflow",
+  qc_fte_salary: "qc_workflow", qc_coverage_pct_slides: "qc_workflow",
+  // IT architecture
+  lis_integration_cost_one_time: "it_architecture",
+  it_fte_count_dedicated_dp: "it_architecture", it_fte_salary: "it_architecture",
+  service_contract_annual_per_scanner: "it_architecture",
+  scanner_vendor_count: "it_architecture",
+  // Education
+  conference_cases_per_year: "education", conference_admin_prep_hours_per_week: "education",
+  conference_path_prep_hours_per_week: "education", educational_recuts_per_year: "education",
+  education_prep_reduction_pct_digital: "education",
+  // Case review
+  team_review_meetings_per_week: "case_review", cases_per_review_meeting: "case_review",
+  review_admin_prep_min_per_case: "case_review", review_path_prep_min_per_case: "case_review",
+  review_prep_reduction_pct_digital: "case_review",
+  // Commercialization
+  commercialization_slides_per_year: "commercialization",
+  commercialization_revenue_per_slide: "commercialization",
+  // US CPT
+  ihc_manual_tests_per_year: "us_cpt", ihc_computer_assisted_transition_pct: "us_cpt",
+  cpt_88361_reimbursement_per_test: "us_cpt", wsi_scanned_case_volume_per_year: "us_cpt",
+  cpt_addon_capture_pct: "us_cpt", cpt_addon_avg_reimbursement_per_case: "us_cpt",
+  cpt_realization_pct: "us_cpt",
 };
 
 const FIELD_CATEGORIES = {
@@ -3792,6 +4134,30 @@ const FIELD_UNITS = {
   telepatho_platform_cost_annual: "currency", telepatho_support_fte_cost_annual: "currency",
   telepatho_pathologist_pct_dedicated: "pct", telepatho_case_volume_growth_pct: "pct",
   telepatho_fee_escalation_pct: "pct",
+  // New field units
+  admin_fte_salary: "currency", courier_hourly_rate: "currency",
+  scanner_operator_salary: "currency", qc_fte_salary: "currency",
+  it_fte_salary: "currency", service_contract_annual_per_scanner: "currency",
+  lis_integration_cost_one_time: "currency",
+  monitor_cost_per_unit: "currency", input_device_cost_per_unit: "currency",
+  workstation_upgrade_cost_per_unit: "currency",
+  storage_onprem_cost_per_tb_month: "currency", storage_cloud_cost_per_tb_month: "currency",
+  retrieval_cost_per_request: "currency", archival_cost_per_case: "currency",
+  rose_device_cost: "currency", rose_courier_cost_annual: "currency",
+  legal_internal_cost_per_case: "currency", legal_professional_cost_per_case: "currency",
+  legal_technical_cost_per_case: "currency",
+  commercialization_revenue_per_slide: "currency",
+  cpt_88361_reimbursement_per_test: "currency", cpt_addon_avg_reimbursement_per_case: "currency",
+  storage_onprem_pct: "pct", storage_cloud_pct: "pct",
+  retrieval_decrease_pct_digital: "pct",
+  legal_cases_avoided_pct_digital: "pct",
+  rose_pathologist_productivity_gain_pct: "pct", rose_tech_productivity_gain_pct: "pct",
+  rose_pathologist_fte_dedicated_pct: "pct",
+  qc_time_reduction_pct_digital: "pct", qc_coverage_pct_slides: "pct",
+  education_prep_reduction_pct_digital: "pct",
+  review_prep_reduction_pct_digital: "pct",
+  ihc_computer_assisted_transition_pct: "pct", cpt_addon_capture_pct: "pct",
+  cpt_realization_pct: "pct",
 };
 
 
@@ -3806,6 +4172,8 @@ const FIELD_UNITS = {
 const isHospital = p => p && p.type === "hospital";
 const isDiagLab  = p => p && p.type === "diagnostic_lab";
 const isChain    = p => p && (p.attribution_mode === "diagnostic_lab") && (p.visible_sections || []).includes("data_monetization");
+const isUS       = _ => state && state.region === "us";
+const advancedPillars = _ => state && state.show_advanced_pillars === true;
 const always     = _ => true;
 
 function num(id, label, help, citationId) {
@@ -3827,16 +4195,27 @@ const WIZARD_SECTIONS = [
     id: "clinical_ops",
     title: "Clinical operations",
     eyebrow: "Volume & staffing baseline",
-    description: "Baseline slide and case volume, staffing footprint, and pathologist / histotechnologist compensation. These anchor almost every downstream pillar.",
+    description: "Baseline slide and case volume, staffing footprint (including admin and courier), case assembly/delivery time, and pathologist / histotechnologist / admin compensation. These anchor almost every downstream pillar.",
     pillar_tags: ["productivity", "slide_movement"],
     visible_when: always,
     fields: [
       num("annual_slide_volume", "Annual slide volume", "Total histopathology slides (glass) processed per year."),
       num("annual_case_volume",  "Annual case volume", "Distinct patient cases per year."),
+      num("days_per_week_operating", "Operating days per week"),
+      num("weeks_per_year_operating", "Operating weeks per year"),
       num("pathologist_fte",     "Pathologist FTE", "Full-time-equivalent reporting pathologists."),
       num("histotech_fte",       "Histotechnologist FTE", "Full-time-equivalent histotechnologists and lab techs."),
+      num("tech_hours_per_shift", "Technologist hours per shift"),
+      num("admin_fte_count",     "Admin FTE count"),
+      num("admin_hours_per_shift", "Admin hours per shift"),
       money("pathologist_salary_annual", "Pathologist salary (annual)", "Average loaded annual compensation per pathologist including benefits.", "mgma_compensation_2024"),
       money("histotech_salary_annual",   "Histotech salary (annual)", "Average loaded annual compensation per histotechnologist."),
+      money("admin_fte_salary",  "Admin salary (annual)", "Average loaded annual compensation per admin/lab assistant."),
+      // Case assembly & delivery (DPA parity)
+      num("tech_assembly_time_min_per_case", "Tech time assembling each case (min)"),
+      num("tech_delivery_hours_per_day", "Tech time delivering cases (hours/day)"),
+      num("courier_delivery_hours_per_week", "Internal courier delivery time (hours/week)"),
+      money("courier_hourly_rate", "Courier hourly rate"),
     ],
   },
 
@@ -3861,18 +4240,34 @@ const WIZARD_SECTIONS = [
     id: "equipment",
     title: "Equipment & infrastructure",
     eyebrow: "Capital + core opex",
-    description: "One-time capital for scanners and workstations, plus recurring IMS license, storage, implementation, and validation costs.",
+    description: "One-time capital for scanners and workstations, plus recurring IMS license, storage (with on-prem/cloud split), implementation, and validation costs. Scanner capacity inputs drive throughput feasibility checks.",
     pillar_tags: ["capex"],
     visible_when: always,
     fields: [
       money("scanner_cost",     "Scanner cost (per unit)", "Mid-range WSI scanner list price or tendered rate."),
       num("scanner_count",      "Scanner count"),
-      money("workstation_cost", "Reporting workstation cost (per unit)"),
+      // Scanner capacity block (DPA parity)
+      num("scan_time_per_slide_min", "Scan time per slide (min)", "Used for capacity feasibility check."),
+      num("scan_operational_hours_per_day", "Scan operational hours per day"),
+      num("scanner_operator_count", "Scanner operator count"),
+      money("scanner_operator_salary", "Scanner operator salary (annual)"),
+      num("scanner_downtime_hours_per_week", "Scanner downtime (hours/week)"),
+      // Workstation breakdown (DPA parity). Leave blank to use aggregate below.
+      money("workstation_cost", "Aggregate workstation cost (per unit, legacy)", "Single-value fallback if the per-component fields below are blank."),
       num("workstation_count",  "Workstation count"),
+      money("monitor_cost_per_unit", "High-definition monitor cost (per unit)"),
+      money("input_device_cost_per_unit", "Input device cost (per unit)"),
+      money("workstation_upgrade_cost_per_unit", "Workstation upgrade cost (per unit)"),
       money("ims_license_annual", "IMS software license (annual)", "Image management system subscription / licence from any commercial WSI image-management vendor."),
       money("ims_support_annual", "IMS support & AMC (annual)", "Vendor support, annual maintenance, and minor version upgrades. Set to 0 if bundled into the licence line above."),
-      money("storage_cost_per_tb_year", "Storage cost per TB per year", "Warm-tier cloud (S3 / Azure Blob / GCS) or on-prem NAS equivalent. Exclude egress — captured separately."),
-      num("storage_growth_tb_year",     "Storage growth per year (TB)", "Net new WSI storage footprint per year after compression and tiling."),
+      // Storage on-prem / cloud split (DPA parity). Leave split blank to use legacy single-rate below.
+      money("storage_cost_per_tb_year", "Storage cost per TB per year (legacy)", "Single-value fallback if the on-prem/cloud split below is blank."),
+      num("storage_growth_tb_year",     "Storage growth per year (TB)", "Net new WSI storage footprint per year after compression and tiling. Auto-derived if WSI file size and scanned case volume are provided."),
+      num("storage_wsi_file_size_gb", "Average WSI file size (GB)"),
+      pct("storage_onprem_pct", "Storage on-premise share (%)"),
+      money("storage_onprem_cost_per_tb_month", "On-prem storage cost per TB/month"),
+      pct("storage_cloud_pct", "Storage cloud share (%)"),
+      money("storage_cloud_cost_per_tb_month", "Cloud storage cost per TB/month"),
       money("egress_cost_annual", "Cloud egress & data transfer (annual)", "Data transfer out of cloud storage (AWS S3, Azure Blob, GCS). Relevant only when slide viewing happens outside the cloud region. Set to 0 for on-prem-only deployments. Roughly ($0.08–$0.12)/GB for US cloud; ~50% of that for India/APAC local providers; multiply by annual retrieved volume."),
       money("implementation_cost", "Implementation services (one-time)"),
       money("validation_cost",     "Validation / go-live (one-time)"),
@@ -3898,14 +4293,24 @@ const WIZARD_SECTIONS = [
     id: "archive",
     title: "Archive & retrieval",
     eyebrow: "Physical slide storage",
-    description: "Archive square footage, retrieval labor, and the physical storage footprint that a digital workflow can progressively recover.",
+    description: "Archive square footage, retrieval and archival labor, per-shipment and per-request costs, and the physical storage footprint that a digital workflow can progressively recover.",
     pillar_tags: ["slide_movement", "infrastructure"],
     visible_when: always,
     fields: [
       num("archive_sqft", "Archive space (sqft)"),
       money("archive_rent_per_sqft_year", "Rent per sqft per year"),
-      num("retrieval_hours_per_week", "Slide retrieval labor (hours/week)"),
+      num("retrieval_hours_per_week", "Slide retrieval labor (hours/week, aggregate)"),
       num("real_estate_sqft_freed", "Sqft projected to be freed by digital workflow"),
+      // DPA-parity detail
+      money("retrieval_cost_per_request", "Cost per retrieval request"),
+      money("archival_cost_per_case", "Cost per case archival"),
+      pct("retrieval_decrease_pct_digital", "Retrieval decrease with digital (%)"),
+      num("tech_archive_hours_per_week", "Tech archive time (hours/week)"),
+      num("tech_retrieve_hours_per_week", "Tech retrieval time (hours/week)"),
+      num("admin_archive_hours_per_week", "Admin archive time (hours/week)"),
+      num("admin_retrieve_hours_per_week", "Admin retrieval time (hours/week)"),
+      num("shipments_archived_per_week", "Archived shipments per week"),
+      num("shipments_retrieved_per_week", "Retrieved shipments per week"),
     ],
   },
 
@@ -3930,12 +4335,16 @@ const WIZARD_SECTIONS = [
     id: "legal",
     title: "Legal / medicolegal",
     eyebrow: "Compliance & audit readiness",
-    description: "Medicolegal requests and the cost saved per request through digital audit trail and immediate slide access. Ardon 2023 reports 77%/85% reductions in a single-institution study.",
+    description: "Medicolegal requests and the cost saved per request through digital audit trail and immediate slide access. Either use the aggregate delta (legacy) or provide the tripartite breakdown (internal/professional/technical) for finer attribution — DPA parity. Ardon 2023 reports 77%/85% reductions in a single-institution study.",
     pillar_tags: ["risk_compliance"],
     visible_when: always,
     fields: [
       num("legal_requests_per_year", "Medicolegal requests per year"),
-      money("legal_cost_delta_per_request", "Cost saved per request", "Reduction in retrieval, duplication, and transport cost per legal request.", "ardon2023_logistics"),
+      money("legal_cost_delta_per_request", "Aggregate cost saved per request (legacy)", "Fallback single-value if the tripartite breakdown below is blank.", "ardon2023_logistics"),
+      money("legal_internal_cost_per_case", "Internal legal cost per case", "In-house counsel time, record pulls, coordination."),
+      money("legal_professional_cost_per_case", "Professional legal cost per case", "External counsel, deposition, filing fees."),
+      money("legal_technical_cost_per_case", "Technical legal cost per case", "Expert witnesses, case preparation, slide handling."),
+      pct("legal_cases_avoided_pct_digital", "Cases avoided with digital audit trail (%)"),
     ],
   },
 
@@ -4143,6 +4552,122 @@ const WIZARD_SECTIONS = [
     visible_when: always,
     fields: [
       money("consult_revenue_per_case", "Consult revenue per case"),
+    ],
+  },
+
+  {
+    id: "rose_workflow",
+    title: "ROSE cytology workflow",
+    eyebrow: "Rapid on-site evaluation",
+    description: "Rapid On-Site Evaluation (ROSE) during FNAs and biopsies. Digital pathology lets a remote pathologist provide adequacy assessment via live streaming, freeing local time and eliminating courier runs. Skip this section if your lab does not field ROSE.",
+    pillar_tags: ["rose_workflow"],
+    visible_when: p => isHospital(p),
+    fields: [
+      select("rose_enabled", "ROSE procedures performed?", [
+        { value: "yes", label: "Yes" },
+        { value: "no", label: "No" },
+      ]),
+      num("rose_procedures_per_day", "Average ROSE procedures per day"),
+      num("rose_remote_device_count", "Remote devices (scanners) at procedure sites"),
+      money("rose_device_cost", "Cost per remote device"),
+      money("rose_courier_cost_annual", "ROSE-related courier cost (annual)"),
+      pct("rose_pathologist_productivity_gain_pct", "Pathologist productivity gain (%)"),
+      pct("rose_tech_productivity_gain_pct", "Technologist productivity gain (%)"),
+      pct("rose_pathologist_fte_dedicated_pct", "Pathologist FTE dedicated to ROSE (%)"),
+    ],
+  },
+
+  {
+    id: "qc_workflow",
+    title: "Quality control workflow",
+    eyebrow: "Slide QC review time",
+    description: "Time spent by a QC pathologist or technologist reviewing slides for stain quality, completeness, and label accuracy. Digital pathology enables faster batch QC with keyboard-driven review.",
+    pillar_tags: ["qc_workflow"],
+    visible_when: always,
+    fields: [
+      num("qc_time_per_slide_min_current", "QC time per slide, current (min)"),
+      pct("qc_time_reduction_pct_digital", "QC time reduction with digital (%)"),
+      money("qc_fte_salary", "QC personnel annual salary"),
+      pct("qc_coverage_pct_slides", "Slides that receive QC review (%)"),
+    ],
+  },
+
+  {
+    id: "it_architecture",
+    title: "IT architecture (ongoing)",
+    eyebrow: "IT overhead beyond IMS",
+    description: "Ongoing IT cost of supporting a digital pathology deployment — LIS integration, dedicated IT FTEs, service contracts per scanner, and the complexity surcharge that comes from running multiple scanner vendors. Appears as a cost pillar (negative) so your ROI reflects the real operational burden.",
+    pillar_tags: ["it_architecture"],
+    visible_when: always,
+    fields: [
+      money("lis_integration_cost_one_time", "LIS integration cost (one-time, Year 1)"),
+      num("it_fte_count_dedicated_dp", "IT FTEs dedicated to digital pathology"),
+      money("it_fte_salary", "IT FTE annual salary"),
+      money("service_contract_annual_per_scanner", "Service contract per scanner (annual)"),
+      num("scanner_vendor_count", "Number of scanner vendors"),
+    ],
+  },
+
+  {
+    id: "education_conferencing",
+    title: "Education & conferencing",
+    eyebrow: "Teaching and recut burden",
+    description: "Preparation time for tumor boards, grand rounds, and educational conferences, plus the cost of recuts generated specifically for teaching. Digital pathology preserves cases permanently as images and slashes prep time.",
+    pillar_tags: ["education_conferencing"],
+    visible_when: p => isHospital(p),
+    fields: [
+      num("conference_cases_per_year", "Conference cases presented per year"),
+      num("conference_admin_prep_hours_per_week", "Admin conference prep (hours/week)"),
+      num("conference_path_prep_hours_per_week", "Pathologist conference prep (hours/week)"),
+      num("educational_recuts_per_year", "Educational recuts generated per year"),
+      pct("education_prep_reduction_pct_digital", "Prep time reduction with digital (%)"),
+    ],
+  },
+
+  {
+    id: "case_review_collab",
+    title: "Case review & collaboration",
+    eyebrow: "Tumor board & consensus review",
+    description: "Time spent preparing cases for multi-disciplinary review meetings, consensus conferences, and internal QA reviews. Digital eliminates slide-pulling, enables parallel review, and accelerates decision-making.",
+    pillar_tags: ["case_review_collab"],
+    visible_when: p => isHospital(p),
+    fields: [
+      num("team_review_meetings_per_week", "Team review meetings per week"),
+      num("cases_per_review_meeting", "Cases reviewed per meeting"),
+      num("review_admin_prep_min_per_case", "Admin prep per case (min)"),
+      num("review_path_prep_min_per_case", "Pathologist prep per case (min)"),
+      pct("review_prep_reduction_pct_digital", "Review prep reduction with digital (%)"),
+    ],
+  },
+
+  {
+    id: "commercialization",
+    title: "Dataset commercialization",
+    eyebrow: "Slide-level commercial revenue",
+    description: "Direct per-slide sales into pharma research, AI training, or clinical trial tissue banks. Distinct from strategic partnership NPV (which is in Data monetization) — this is transactional revenue priced per slide.",
+    pillar_tags: ["commercialization"],
+    visible_when: p => isDiagLab(p) && advancedPillars(),
+    fields: [
+      num("commercialization_slides_per_year", "Slides for commercialization per year"),
+      money("commercialization_revenue_per_slide", "Revenue per commercialized slide"),
+    ],
+  },
+
+  {
+    id: "us_cpt_reimbursement",
+    title: "US CPT digital pathology reimbursement",
+    eyebrow: "88361 + 0751T–0763T add-on codes",
+    description: "US-only. Revenue from computer-assisted IHC quantification (CPT 88361) and the digital pathology Category III add-on codes (0751T–0763T). These add-ons are CURRENTLY CONTRACTOR-PRICED with no national Medicare rate, so realization varies by Medicare Administrative Contractor (MAC). Use conservative realization assumptions. Confidence: LOW.",
+    pillar_tags: ["us_cpt_reimbursement"],
+    visible_when: p => isUS() && advancedPillars(),
+    fields: [
+      num("ihc_manual_tests_per_year", "Manual-quantified IHC tests per year (HER2, Ki67, ER/PR, PD-L1)"),
+      pct("ihc_computer_assisted_transition_pct", "Transition to computer-assisted IHC (%)"),
+      money("cpt_88361_reimbursement_per_test", "CPT 88361 reimbursement per test"),
+      num("wsi_scanned_case_volume_per_year", "WSI scanned cases per year"),
+      pct("cpt_addon_capture_pct", "Digital add-on CPT capture rate (% of WSI cases)"),
+      money("cpt_addon_avg_reimbursement_per_case", "Average digital add-on reimbursement per case"),
+      pct("cpt_realization_pct", "CPT realization rate (% — contractor pricing reality)"),
     ],
   },
 
@@ -4418,12 +4943,47 @@ function get(id, fallback) {
 /* ----- Hospital pillar formulas ----- */
 
 function pillar_slide_movement(ramp) {
-  const courier = get("courier_cost_annual");
-  const retrievalHrs = get("retrieval_hours_per_week") * 52;
   const histotechHourly = get("histotech_salary_annual") / 2080;
-  const retrievalLabor = retrievalHrs * histotechHourly * 0.5; // 50% recoverable
+  const adminHourly = (get("admin_fte_salary") || 0) / 2080;
   const lost = get("lost_slides_per_year") * get("lost_slide_cost");
-  return (courier * 0.55 + retrievalLabor + lost) * ramp;
+
+  // Courier: prefer detailed hourly breakdown if the hourly fields are populated; otherwise
+  // fall back to the legacy aggregate. These two represent the same savings under different
+  // framings, so they must not both fire.
+  const courierHrs = (get("courier_delivery_hours_per_week") || 0) * 52;
+  const courierRate = get("courier_hourly_rate") || 0;
+  const courierDetailed = courierHrs * courierRate * 0.70;
+  const courierLegacy = (get("courier_cost_annual") || 0) * 0.55;
+  const courierSavings = courierHrs > 0 ? courierDetailed : courierLegacy;
+
+  // Archive/retrieval labor: prefer the DPA-parity breakdown (tech+admin × archive+retrieve)
+  // if any of those hour fields are set; otherwise use the legacy retrieval_hours_per_week.
+  const techArchH = get("tech_archive_hours_per_week") || 0;
+  const techRetrH = get("tech_retrieve_hours_per_week") || 0;
+  const adminArchH = get("admin_archive_hours_per_week") || 0;
+  const adminRetrH = get("admin_retrieve_hours_per_week") || 0;
+  const archRetrDecrease = get("retrieval_decrease_pct_digital") || 0.75;
+  const hasArchRetrBreakdown = (techArchH + techRetrH + adminArchH + adminRetrH) > 0;
+  const archRetrDetailed = ((techArchH + techRetrH) * 52 * histotechHourly
+                         + (adminArchH + adminRetrH) * 52 * adminHourly) * archRetrDecrease;
+  const archRetrLegacy = (get("retrieval_hours_per_week") || 0) * 52 * histotechHourly * 0.5;
+  const archRetrLabor = hasArchRetrBreakdown ? archRetrDetailed : archRetrLegacy;
+
+  // Truly additive DPA-parity terms (no legacy equivalent exists):
+  // case assembly by tech, tech delivery runs, and per-shipment archive/retrieve costs.
+  const cases = get("annual_case_volume") || 0;
+  const assemblyMin = get("tech_assembly_time_min_per_case") || 0;
+  const assemblySavings = (assemblyMin * cases / 60) * histotechHourly * 0.65;
+  const techDeliveryHrs = (get("tech_delivery_hours_per_day") || 0) * (get("days_per_week_operating") || 5) * (get("weeks_per_year_operating") || 50);
+  const techDeliverySavings = techDeliveryHrs * histotechHourly * 0.70;
+  const retrShipments = (get("shipments_retrieved_per_week") || 0) * 52;
+  const archShipments = (get("shipments_archived_per_week") || 0) * 52;
+  const retrCostPer = get("retrieval_cost_per_request") || 0;
+  const archCostPer = get("archival_cost_per_case") || 0;
+  const shipmentSavings = (retrShipments * retrCostPer + archShipments * archCostPer) * archRetrDecrease;
+
+  return (courierSavings + archRetrLabor + lost
+          + assemblySavings + techDeliverySavings + shipmentSavings) * ramp;
 }
 
 function pillar_productivity(ramp) {
@@ -4475,8 +5035,15 @@ function pillar_infrastructure(ramp) {
 
 function pillar_risk_compliance(ramp) {
   const requests = get("legal_requests_per_year");
-  const delta = get("legal_cost_delta_per_request");
-  return requests * delta * ramp;
+  const deltaAgg = get("legal_cost_delta_per_request") || 0;
+  const internalCost = get("legal_internal_cost_per_case") || 0;
+  const profCost = get("legal_professional_cost_per_case") || 0;
+  const techCost = get("legal_technical_cost_per_case") || 0;
+  const tripartiteSum = internalCost + profCost + techCost;
+  const casesAvoidedPct = get("legal_cases_avoided_pct_digital") || 0.20;
+  // DPA-parity: use tripartite breakdown if any leg provided; else fall back to legacy aggregate.
+  const perCaseSavings = tripartiteSum > 0 ? tripartiteSum * casesAvoidedPct : deltaAgg;
+  return requests * perCaseSavings * ramp;
 }
 
 function pillar_strategic(ramp) {
@@ -4571,16 +5138,140 @@ function pillar_telepathology_revenue(ramp, year) {
   return Math.max(0, grossRevenue - pathCost - overheadCosts);
 }
 
+/* ----- DPA-parity pillars ----- */
+
+function pillar_rose_workflow(ramp) {
+  const enabled = get("rose_enabled");
+  if (enabled === "no" || enabled === 0 || enabled === "0" || enabled === false) return 0;
+  const procPerDay = get("rose_procedures_per_day") || 0;
+  if (procPerDay === 0) return 0;
+  const days = get("days_per_week_operating") || 5;
+  const weeks = get("weeks_per_year_operating") || 50;
+  const procYear = procPerDay * days * weeks;
+
+  // Pathologist time: 30 min per ROSE baseline × productivity gain
+  const pathGain = get("rose_pathologist_productivity_gain_pct") || 0.25;
+  const pathHoursSaved = (procYear * 30 * pathGain) / 60;
+  const pathHourly = (get("pathologist_salary_annual") || 0) / 1800;
+  const pathSavings = pathHoursSaved * pathHourly;
+
+  // Tech time: 20 min per ROSE baseline × productivity gain
+  const techGain = get("rose_tech_productivity_gain_pct") || 0.15;
+  const techHoursSaved = (procYear * 20 * techGain) / 60;
+  const techHourly = (get("histotech_salary_annual") || 0) / 2080;
+  const techSavings = techHoursSaved * techHourly;
+
+  // Courier: digital eliminates 70% of same-day courier runs
+  const courierSavings = (get("rose_courier_cost_annual") || 0) * 0.70;
+
+  // Remote device cost amortized over 5 years
+  const deviceAnnualCost = ((get("rose_remote_device_count") || 0) * (get("rose_device_cost") || 0)) / 5;
+
+  return (pathSavings + techSavings + courierSavings) * ramp - deviceAnnualCost;
+}
+
+function pillar_qc_workflow(ramp) {
+  const slides = get("annual_slide_volume") || 0;
+  const coverage = get("qc_coverage_pct_slides") || 0.10;
+  const timePerSlide = get("qc_time_per_slide_min_current") || 1.5;
+  const reduction = get("qc_time_reduction_pct_digital") || 0.40;
+  const qcHourly = (get("qc_fte_salary") || 0) / 2080;
+  const qcSlides = slides * coverage;
+  const hoursSaved = (qcSlides * timePerSlide * reduction) / 60;
+  return hoursSaved * qcHourly * ramp;
+}
+
+function pillar_it_architecture(isYear1) {
+  // Cost pillar (negative). Captures ongoing IT burden beyond IMS license/support.
+  const itCost = (get("it_fte_count_dedicated_dp") || 0) * (get("it_fte_salary") || 0);
+  const vendorCount = Math.max(1, get("scanner_vendor_count") || 1);
+  const vendorComplexityMult = 1 + 0.10 * (vendorCount - 1);
+  const serviceTotal = (get("scanner_count") || 1) * (get("service_contract_annual_per_scanner") || 0) * vendorComplexityMult;
+  const oneTime = isYear1 ? (get("lis_integration_cost_one_time") || 0) : 0;
+  return -(itCost + serviceTotal + oneTime);
+}
+
+function pillar_education_conferencing(ramp) {
+  const weeks = get("weeks_per_year_operating") || 50;
+  const reduction = get("education_prep_reduction_pct_digital") || 0.50;
+  const adminHours = (get("conference_admin_prep_hours_per_week") || 0) * weeks * reduction;
+  const pathHours = (get("conference_path_prep_hours_per_week") || 0) * weeks * reduction;
+  const adminHourly = (get("admin_fte_salary") || 0) / 2080;
+  const pathHourly = (get("pathologist_salary_annual") || 0) / 1800;
+  const recuts = get("educational_recuts_per_year") || 0;
+  const recutCost = get("recut_cost") || 0;
+  const recutSavings = recuts * recutCost * 0.85; // digital retains visual record
+  return (adminHours * adminHourly + pathHours * pathHourly + recutSavings) * ramp;
+}
+
+function pillar_case_review_collab(ramp) {
+  const meetings = get("team_review_meetings_per_week") || 0;
+  const casesPerMeet = get("cases_per_review_meeting") || 0;
+  const weeks = get("weeks_per_year_operating") || 50;
+  const totalCases = meetings * casesPerMeet * weeks;
+  const reduction = get("review_prep_reduction_pct_digital") || 0.40;
+  const adminMins = totalCases * (get("review_admin_prep_min_per_case") || 0) * reduction;
+  const pathMins = totalCases * (get("review_path_prep_min_per_case") || 0) * reduction;
+  const adminHourly = (get("admin_fte_salary") || 0) / 2080;
+  const pathHourly = (get("pathologist_salary_annual") || 0) / 1800;
+  return ((adminMins / 60) * adminHourly + (pathMins / 60) * pathHourly) * ramp;
+}
+
+function pillar_commercialization(ramp) {
+  const slides = get("commercialization_slides_per_year") || 0;
+  const revPerSlide = get("commercialization_revenue_per_slide") || 0;
+  return slides * revPerSlide * ramp;
+}
+
+function pillar_us_cpt_reimbursement(ramp) {
+  // LOW-confidence pillar: 0751T-0763T are contractor-priced (no national Medicare rate).
+  const realization = get("cpt_realization_pct") || 0.40;
+  const ihcTests = get("ihc_manual_tests_per_year") || 0;
+  const caTransition = get("ihc_computer_assisted_transition_pct") || 0;
+  const cpt88361 = get("cpt_88361_reimbursement_per_test") || 0;
+  const ihcRevenue = ihcTests * caTransition * cpt88361 * realization;
+
+  const wsiCases = get("wsi_scanned_case_volume_per_year") || 0;
+  const addonPct = get("cpt_addon_capture_pct") || 0;
+  const addonAvg = get("cpt_addon_avg_reimbursement_per_case") || 0;
+  const addonRevenue = wsiCases * addonPct * addonAvg * realization;
+
+  return (ihcRevenue + addonRevenue) * ramp;
+}
+
 /* ----- Investment model ----- */
 
 function computeInvestment() {
+  // Workstation unit cost: prefer DPA-style monitor+input+upgrade breakdown if provided.
+  const wsBreakdown = (get("monitor_cost_per_unit") || 0)
+                    + (get("input_device_cost_per_unit") || 0)
+                    + (get("workstation_upgrade_cost_per_unit") || 0);
+  const wsUnitCost = wsBreakdown > 0 ? wsBreakdown : (get("workstation_cost") || 0);
+
+  // Storage blended cost: prefer on-prem/cloud split if provided.
+  const onpremPct = get("storage_onprem_pct");
+  const cloudPct = get("storage_cloud_pct");
+  const onpremRate = get("storage_onprem_cost_per_tb_month") || 0;
+  const cloudRate = get("storage_cloud_cost_per_tb_month") || 0;
+  const hasSplit = (onpremRate + cloudRate) > 0 && (onpremPct != null || cloudPct != null);
+  const blendedTbYear = hasSplit
+    ? ((onpremPct || 0) * onpremRate + (cloudPct || 0) * cloudRate) * 12
+    : (get("storage_cost_per_tb_year") || 0);
+
+  // Storage volume: prefer WSI-file-size-based calc if provided.
+  const wsiGb = get("storage_wsi_file_size_gb") || 0;
+  const wsiVol = get("wsi_scanned_case_volume_per_year") || 0;
+  const volumeBasedTb = wsiGb > 0 && wsiVol > 0 ? (wsiVol * wsiGb) / 1024 : 0;
+  const storageGrowthTb = volumeBasedTb > 0 ? volumeBasedTb : (get("storage_growth_tb_year") || 0);
+
   const capex = get("scanner_cost") * (get("scanner_count") || 1)
-              + get("workstation_cost") * (get("workstation_count") || 1)
+              + wsUnitCost * (get("workstation_count") || 1)
               + get("implementation_cost")
               + get("validation_cost")
-              + get("training_cost_per_fte") * (get("pathologist_fte") + get("histotech_fte"));
+              + get("training_cost_per_fte") * (get("pathologist_fte") + get("histotech_fte"))
+              + (get("lis_integration_cost_one_time") || 0);
   const opexY1 = get("ims_license_annual")
-               + get("storage_cost_per_tb_year") * get("storage_growth_tb_year")
+               + blendedTbYear * storageGrowthTb
                + (get("egress_cost_annual") || 0)
                + (get("ims_support_annual") || 0);
   return { capex, opexY1 };
@@ -4600,6 +5291,9 @@ function computeYear(y, profile) {
   const inflation = get("inflation_rate") || 0.03;
   const inflFactor = Math.pow(1 + inflation, Math.max(0, y - 1));
   const pillars = {};
+  const isUS = state.region === "us";
+  const advanced = state.show_advanced_pillars === true;
+  const visibleSections = (profile && profile.visible_sections) || [];
   if (profile && profile.type === "hospital") {
     pillars.slide_movement = pillar_slide_movement(ramp);
     pillars.productivity   = pillar_productivity(ramp);
@@ -4610,6 +5304,13 @@ function computeYear(y, profile) {
     pillars.infrastructure = pillar_infrastructure(ramp);
     pillars.risk_compliance= pillar_risk_compliance(ramp);
     pillars.strategic      = pillar_strategic(ramp);
+    // DPA-parity pillars (hospital-relevant)
+    if (visibleSections.includes("rose_workflow"))          pillars.rose_workflow = pillar_rose_workflow(ramp);
+    if (visibleSections.includes("qc_workflow"))            pillars.qc_workflow = pillar_qc_workflow(ramp);
+    if (visibleSections.includes("it_architecture"))        pillars.it_architecture = pillar_it_architecture(y === 1);
+    if (visibleSections.includes("education_conferencing")) pillars.education_conferencing = pillar_education_conferencing(ramp);
+    if (visibleSections.includes("case_review_collab"))     pillars.case_review_collab = pillar_case_review_collab(ramp);
+    if (advanced && isUS && visibleSections.includes("us_cpt_reimbursement")) pillars.us_cpt_reimbursement = pillar_us_cpt_reimbursement(ramp);
   } else if (profile && profile.type === "diagnostic_lab") {
     pillars.slide_movement       = pillar_slide_movement(ramp);
     pillars.productivity         = pillar_productivity(ramp);
@@ -4621,9 +5322,14 @@ function computeYear(y, profile) {
     pillars.commercial_growth    = pillar_commercial_growth(ramp);
     pillars.consult_revenue_scale= pillar_consult_revenue_scale(ramp);
     pillars.telepathology_revenue= pillar_telepathology_revenue(ramp, y);
-    if (profile.visible_sections.includes("data_monetization")) {
+    if (visibleSections.includes("data_monetization")) {
       pillars.data_monetization  = pillar_data_monetization(ramp);
     }
+    // DPA-parity pillars (lab-relevant)
+    if (visibleSections.includes("qc_workflow"))       pillars.qc_workflow = pillar_qc_workflow(ramp);
+    if (visibleSections.includes("it_architecture"))   pillars.it_architecture = pillar_it_architecture(y === 1);
+    if (advanced && visibleSections.includes("commercialization")) pillars.commercialization = pillar_commercialization(ramp);
+    if (advanced && isUS && visibleSections.includes("us_cpt_reimbursement")) pillars.us_cpt_reimbursement = pillar_us_cpt_reimbursement(ramp);
   }
   // apply inflation to all pillar values (salary-dominated)
   Object.keys(pillars).forEach(k => { pillars[k] = pillars[k] * inflFactor; });
@@ -4824,30 +5530,40 @@ function attributionLegend(profile) {
 function pillarAttribution(pillarKey, mode) {
   if (mode === "hospital") {
     const map = {
-      slide_movement:  "pathology_dept",
-      productivity:    "pathology_dept",
-      waste_reduction: "pathology_dept",
-      surgical_impact: "hospital",
-      patient_flow:    "hospital",
-      infrastructure:  "hospital",
-      workforce:       "pathology_dept",
-      risk_compliance: "health_system",
-      strategic:       "health_system",
+      slide_movement:         "pathology_dept",
+      productivity:           "pathology_dept",
+      waste_reduction:        "pathology_dept",
+      surgical_impact:        "hospital",
+      patient_flow:           "hospital",
+      infrastructure:         "hospital",
+      workforce:              "pathology_dept",
+      risk_compliance:        "health_system",
+      strategic:              "health_system",
+      rose_workflow:          "pathology_dept",
+      qc_workflow:            "pathology_dept",
+      it_architecture:        "hospital",
+      education_conferencing: "pathology_dept",
+      case_review_collab:     "pathology_dept",
+      us_cpt_reimbursement:   "health_system",
     };
     return map[pillarKey] || "pathology_dept";
   }
   const map = {
-    slide_movement:        "lab_opex",
-    productivity:          "lab_opex",
-    waste_reduction:       "lab_opex",
-    infrastructure:        "lab_opex",
-    risk_compliance:       "lab_opex",
-    hub_spoke_logistics:   "lab_opex",
-    subspecialty_routing:  "commercial_growth",
-    commercial_growth:     "commercial_growth",
-    consult_revenue_scale: "commercial_growth",
-    data_monetization:     "strategic_asset",
-    telepathology_revenue: "commercial_growth",
+    slide_movement:         "lab_opex",
+    productivity:           "lab_opex",
+    waste_reduction:        "lab_opex",
+    infrastructure:         "lab_opex",
+    risk_compliance:        "lab_opex",
+    hub_spoke_logistics:    "lab_opex",
+    subspecialty_routing:   "commercial_growth",
+    commercial_growth:      "commercial_growth",
+    consult_revenue_scale:  "commercial_growth",
+    data_monetization:      "strategic_asset",
+    telepathology_revenue:  "commercial_growth",
+    qc_workflow:            "lab_opex",
+    it_architecture:        "lab_opex",
+    commercialization:      "commercial_growth",
+    us_cpt_reimbursement:   "commercial_growth",
   };
   return map[pillarKey] || "lab_opex";
 }
@@ -4868,6 +5584,13 @@ const PILLAR_LABELS = {
   consult_revenue_scale: "Consult revenue scalability",
   data_monetization:     "Data monetization & AI",
   telepathology_revenue: "Telepathology practice revenue",
+  rose_workflow:         "ROSE cytology workflow",
+  qc_workflow:           "Quality control",
+  it_architecture:       "IT architecture (ongoing cost)",
+  education_conferencing:"Education & conferencing",
+  case_review_collab:    "Case review & collaboration",
+  commercialization:     "Dataset commercialization",
+  us_cpt_reimbursement:  "US CPT digital pathology reimbursement",
 };
 
 
@@ -4914,6 +5637,36 @@ function renderPreliminaryBanner(containerId) {
     </div>`;
 }
 
+function renderFeasibilityBanner(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const slides = get("annual_slide_volume") || 0;
+  const scanners = get("scanner_count") || 0;
+  const scanTime = get("scan_time_per_slide_min") || 0;
+  const opHours = get("scan_operational_hours_per_day") || 0;
+  const days = get("days_per_week_operating") || 0;
+  const weeks = get("weeks_per_year_operating") || 0;
+  const downtimeHrs = get("scanner_downtime_hours_per_week") || 0;
+  // Only warn if all inputs available for a meaningful feasibility check
+  if (!(slides > 0 && scanners > 0 && scanTime > 0 && opHours > 0 && days > 0 && weeks > 0)) {
+    el.innerHTML = "";
+    return;
+  }
+  const effectiveHoursPerWeek = (opHours * days) - downtimeHrs;
+  const throughputPerScannerYear = (60 / scanTime) * effectiveHoursPerWeek * weeks;
+  const maxCapacity = scanners * throughputPerScannerYear;
+  if (maxCapacity >= slides) { el.innerHTML = ""; return; }
+  const shortfallPct = ((slides - maxCapacity) / slides) * 100;
+  el.innerHTML = `
+    <div class="banner-preliminary" style="background:#fff5f0; border-color:#c86a4a;">
+      <div>
+        <strong style="color:#8a3a1a;">Scanner capacity shortfall.</strong>
+        Your annual slide volume (${Math.round(slides).toLocaleString()}) exceeds the realistic throughput of ${scanners} scanner(s) by ~${shortfallPct.toFixed(0)}% (max ~${Math.round(maxCapacity).toLocaleString()} slides/year at ${scanTime.toFixed(1)} min/slide × ${effectiveHoursPerWeek.toFixed(0)} effective hrs/week).
+        Consider: more scanners, longer operating hours, or throughput upgrades. This is a Turoi-specific feasibility check not present in the DPA calculator.
+      </div>
+    </div>`;
+}
+
 function renderDashboard() {
   const results = state.results;
   if (!results) return;
@@ -4930,6 +5683,7 @@ function renderDashboard() {
     catch (e) { console.error("renderDashboard." + label + " failed:", e); }
   };
   safe("preliminaryBanner", () => renderPreliminaryBanner("dashboard-preliminary-banner"));
+  safe("feasibilityBanner", () => renderFeasibilityBanner("dashboard-feasibility-banner"));
   safe("metrics",           () => renderMetrics(results));
   safe("jcurve",            () => renderJCurve(results));
   safe("donut",             () => renderDonut(results));
@@ -6495,6 +7249,15 @@ function boot() {
     persist();
     dashboardInsight();
   });
+  const advPillarsToggle = document.getElementById("advanced-pillars-toggle");
+  if (advPillarsToggle) {
+    advPillarsToggle.checked = state.show_advanced_pillars === true;
+    advPillarsToggle.addEventListener("change", e => {
+      state.show_advanced_pillars = e.target.checked;
+      persist();
+      if (state.results) { state.results = calculate(); renderDashboard(); }
+    });
+  }
   document.getElementById("btn-advisor-send").addEventListener("click", handleChatSend);
   document.getElementById("advisor-chat-input").addEventListener("keydown", e => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleChatSend(); }
